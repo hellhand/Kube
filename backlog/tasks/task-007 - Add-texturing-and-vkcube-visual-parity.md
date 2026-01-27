@@ -11,7 +11,7 @@ dependencies: [TASK-005]
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
-Add a textured cube and adjust the background/visuals to mirror the classic `vkcube` demo (textured faces, consistent depth/culling, and dark backdrop).
+Add a textured cube and adjust the background/visuals to mirror the classic `vkcube` demo: bind UBO + combined image sampler, use the embedded `lunarg.ppm` texture (see `texture_embed.go`), ensure UV-correct faces via 24-vertex layout, disable culling for visibility, keep depth testing on, and use the vkcube-style green backdrop.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria

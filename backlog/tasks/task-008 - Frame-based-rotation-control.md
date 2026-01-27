@@ -12,7 +12,7 @@ dependencies:
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
-Replace time-based spin with frame-based angular steps so cube rotation progresses deterministically with each rendered frame, unaffected by wall-clock jitter or pause/resume timing. Add any config hooks needed to tune degrees-per-frame.
+Replace time-based spin with frame-based angular steps (as now done via `debugFrames` counter in `updateUniformBuffer`); keep SPACE pause/resume by gating the frame counter, and allow tuning degrees-per-frame (currently ~0.75°/frame for 45°/s at 60 fps). Document the choice and keep animation accumulation deterministic.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria

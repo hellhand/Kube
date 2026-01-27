@@ -12,7 +12,7 @@ dependencies:
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
-Add an FPS indicator rendered in the top-left of the window so we can monitor frame timing during the vkcube clone. Keep it lightweight and non-intrusive.
+Add an FPS indicator rendered in the top-left of the window using the overlay pipeline (`vk_overlay.go` + `overlay.vert/frag`) and glyph quads; compute FPS over a 1s window, update once per frame, and draw via indirect draw using dedicated overlay vertex + indirect buffers.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
