@@ -1,7 +1,7 @@
 ---
 id: TASK-001.02
 title: Setup Go Vulkan dependencies and baseline window
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2026-01-27 16:40'
 labels: []
