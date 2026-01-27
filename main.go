@@ -26,6 +26,15 @@ func main() {
 	}
 	defer window.Destroy()
 
+	// Ensure the framebuffer has a non-zero size before initializing Vulkan.
+	for {
+		w, h := window.GetFramebufferSize()
+		if w > 0 && h > 0 {
+			break
+		}
+		glfw.WaitEventsTimeout(0.01)
+	}
+
 	window.SetKeyCallback(func(w *glfw.Window, key glfw.Key, scancode int, action glfw.Action, mods glfw.ModifierKey) {
 		if key == glfw.KeyEscape && action == glfw.Press {
 			w.SetShouldClose(true)
@@ -41,6 +50,8 @@ func main() {
 	window.SetFramebufferSizeCallback(func(w *glfw.Window, width int, height int) {
 		app.requestSwapchainRecreate()
 	})
+
+	log.Printf("Entering main loop")
 
 	for !window.ShouldClose() {
 		glfw.PollEvents()

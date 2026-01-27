@@ -1,4 +1,12 @@
+//go:build linux
+// +build linux
+
 package main
+
+/*
+#include <stdlib.h>
+*/
+import "C"
 
 import (
 	"errors"
@@ -6,6 +14,8 @@ import (
 	"log"
 	"math"
 	"os"
+	"reflect"
+	"runtime"
 	"time"
 	"unsafe"
 
@@ -26,26 +36,83 @@ var (
 type vertex struct {
 	pos   mgl32.Vec3
 	color mgl32.Vec3
+	uv    mgl32.Vec2
 }
 
+type cString struct {
+	str  string
+	cptr *C.char
+}
+
+func makeCString(s string) cString {
+	c := C.CString(s)
+	var goStr string
+	h := (*reflect.StringHeader)(unsafe.Pointer(&goStr))
+	h.Data = uintptr(unsafe.Pointer(c))
+	h.Len = len(s)
+	return cString{str: goStr, cptr: c}
+}
+
+func makeCStringSlice(src []string) ([]string, []*C.char) {
+	out := make([]string, len(src))
+	ptrs := make([]*C.char, len(src))
+	for i, s := range src {
+		cs := makeCString(s)
+		out[i] = cs.str
+		ptrs[i] = cs.cptr
+	}
+	return out, ptrs
+}
+
+func freeCStrings(ptrs []*C.char) {
+	for _, p := range ptrs {
+		if p != nil {
+			C.free(unsafe.Pointer(p))
+		}
+	}
+}
+
+// 24 vertices (4 per face) to allow correct UVs per face.
 var cubeVertices = []vertex{
-	{pos: mgl32.Vec3{-1, -1, -1}, color: mgl32.Vec3{1, 0, 0}},
-	{pos: mgl32.Vec3{1, -1, -1}, color: mgl32.Vec3{0, 1, 0}},
-	{pos: mgl32.Vec3{1, 1, -1}, color: mgl32.Vec3{0, 0, 1}},
-	{pos: mgl32.Vec3{-1, 1, -1}, color: mgl32.Vec3{1, 1, 0}},
-	{pos: mgl32.Vec3{-1, -1, 1}, color: mgl32.Vec3{1, 0, 1}},
-	{pos: mgl32.Vec3{1, -1, 1}, color: mgl32.Vec3{0, 1, 1}},
-	{pos: mgl32.Vec3{1, 1, 1}, color: mgl32.Vec3{1, 1, 1}},
-	{pos: mgl32.Vec3{-1, 1, 1}, color: mgl32.Vec3{0.2, 0.6, 1}},
+	// Back face (Z-)
+	{pos: mgl32.Vec3{-1, -1, -1}, color: mgl32.Vec3{1, 0, 0}, uv: mgl32.Vec2{0, 0}},
+	{pos: mgl32.Vec3{1, -1, -1}, color: mgl32.Vec3{1, 0, 0}, uv: mgl32.Vec2{1, 0}},
+	{pos: mgl32.Vec3{1, 1, -1}, color: mgl32.Vec3{1, 0, 0}, uv: mgl32.Vec2{1, 1}},
+	{pos: mgl32.Vec3{-1, 1, -1}, color: mgl32.Vec3{1, 0, 0}, uv: mgl32.Vec2{0, 1}},
+	// Front face (Z+)
+	{pos: mgl32.Vec3{-1, -1, 1}, color: mgl32.Vec3{0, 1, 0}, uv: mgl32.Vec2{0, 0}},
+	{pos: mgl32.Vec3{1, -1, 1}, color: mgl32.Vec3{0, 1, 0}, uv: mgl32.Vec2{1, 0}},
+	{pos: mgl32.Vec3{1, 1, 1}, color: mgl32.Vec3{0, 1, 0}, uv: mgl32.Vec2{1, 1}},
+	{pos: mgl32.Vec3{-1, 1, 1}, color: mgl32.Vec3{0, 1, 0}, uv: mgl32.Vec2{0, 1}},
+	// Bottom face (Y-)
+	{pos: mgl32.Vec3{-1, -1, -1}, color: mgl32.Vec3{0, 0, 1}, uv: mgl32.Vec2{0, 0}},
+	{pos: mgl32.Vec3{1, -1, -1}, color: mgl32.Vec3{0, 0, 1}, uv: mgl32.Vec2{1, 0}},
+	{pos: mgl32.Vec3{1, -1, 1}, color: mgl32.Vec3{0, 0, 1}, uv: mgl32.Vec2{1, 1}},
+	{pos: mgl32.Vec3{-1, -1, 1}, color: mgl32.Vec3{0, 0, 1}, uv: mgl32.Vec2{0, 1}},
+	// Top face (Y+)
+	{pos: mgl32.Vec3{-1, 1, -1}, color: mgl32.Vec3{1, 1, 0}, uv: mgl32.Vec2{0, 0}},
+	{pos: mgl32.Vec3{1, 1, -1}, color: mgl32.Vec3{1, 1, 0}, uv: mgl32.Vec2{1, 0}},
+	{pos: mgl32.Vec3{1, 1, 1}, color: mgl32.Vec3{1, 1, 0}, uv: mgl32.Vec2{1, 1}},
+	{pos: mgl32.Vec3{-1, 1, 1}, color: mgl32.Vec3{1, 1, 0}, uv: mgl32.Vec2{0, 1}},
+	// Left face (X-)
+	{pos: mgl32.Vec3{-1, -1, 1}, color: mgl32.Vec3{1, 0, 1}, uv: mgl32.Vec2{0, 0}},
+	{pos: mgl32.Vec3{-1, -1, -1}, color: mgl32.Vec3{1, 0, 1}, uv: mgl32.Vec2{1, 0}},
+	{pos: mgl32.Vec3{-1, 1, -1}, color: mgl32.Vec3{1, 0, 1}, uv: mgl32.Vec2{1, 1}},
+	{pos: mgl32.Vec3{-1, 1, 1}, color: mgl32.Vec3{1, 0, 1}, uv: mgl32.Vec2{0, 1}},
+	// Right face (X+)
+	{pos: mgl32.Vec3{1, -1, -1}, color: mgl32.Vec3{0, 1, 1}, uv: mgl32.Vec2{0, 0}},
+	{pos: mgl32.Vec3{1, -1, 1}, color: mgl32.Vec3{0, 1, 1}, uv: mgl32.Vec2{1, 0}},
+	{pos: mgl32.Vec3{1, 1, 1}, color: mgl32.Vec3{0, 1, 1}, uv: mgl32.Vec2{1, 1}},
+	{pos: mgl32.Vec3{1, 1, -1}, color: mgl32.Vec3{0, 1, 1}, uv: mgl32.Vec2{0, 1}},
 }
 
 var cubeIndices = []uint32{
 	0, 1, 2, 2, 3, 0, // back
 	4, 5, 6, 6, 7, 4, // front
-	4, 5, 1, 1, 0, 4, // bottom
-	7, 6, 2, 2, 3, 7, // top
-	4, 0, 3, 3, 7, 4, // left
-	5, 1, 2, 2, 6, 5, // right
+	8, 9, 10, 10, 11, 8, // bottom
+	12, 13, 14, 14, 15, 12, // top
+	16, 17, 18, 18, 19, 16, // left
+	20, 21, 22, 22, 23, 20, // right
 }
 
 type uniformBufferObject struct {
@@ -99,6 +166,10 @@ type VulkanApp struct {
 	descriptorSets       []vulkan.DescriptorSet
 	uniformBuffers       []vulkan.Buffer
 	uniformBuffersMemory []vulkan.DeviceMemory
+	textureImage         vulkan.Image
+	textureImageMemory   vulkan.DeviceMemory
+	textureImageView     vulkan.ImageView
+	textureSampler       vulkan.Sampler
 	vertexBuffer         vulkan.Buffer
 	vertexBufferMemory   vulkan.DeviceMemory
 	indexBuffer          vulkan.Buffer
@@ -111,6 +182,7 @@ type VulkanApp struct {
 	inFlightFences       []vulkan.Fence
 	imagesInFlight       []vulkan.Fence
 	currentFrame         int
+	debugFrames          int
 	framebufferResized   bool
 	startTime            time.Time
 }
@@ -152,91 +224,139 @@ func (a *VulkanApp) initVulkan() error {
 	if err := a.createInstance(); err != nil {
 		return err
 	}
+	log.Printf("Instance created")
 	if err := vulkan.InitInstance(a.instance); err != nil {
 		return fmt.Errorf("vkInitInstance: %w", err)
 	}
 	if err := a.setupDebugCallback(); err != nil {
 		return err
 	}
+	log.Printf("Debug callback ready")
 	if err := a.createSurface(); err != nil {
 		return err
 	}
+	log.Printf("Surface created")
 	if err := a.pickPhysicalDevice(); err != nil {
 		return err
 	}
+	log.Printf("Physical device picked")
 	if err := a.createLogicalDevice(); err != nil {
 		return err
 	}
+	log.Printf("Logical device created")
 	if err := a.createSwapchain(); err != nil {
 		return err
 	}
+	log.Printf("Swapchain created")
 	if err := a.createImageViews(); err != nil {
 		return err
 	}
+	log.Printf("Image views created")
 	if err := a.createDepthResources(); err != nil {
 		return err
 	}
+	log.Printf("Depth resources created")
 	if err := a.createRenderPass(); err != nil {
 		return err
 	}
+	log.Printf("Render pass created")
 	if err := a.createDescriptorSetLayout(); err != nil {
 		return err
 	}
+	log.Printf("Descriptor set layout created")
 	if err := a.createGraphicsPipeline(); err != nil {
 		return err
 	}
+	log.Printf("Graphics pipeline created")
 	if err := a.createFramebuffers(); err != nil {
 		return err
 	}
+	log.Printf("Framebuffers created")
 	if err := a.createCommandPool(); err != nil {
 		return err
 	}
+	log.Printf("Command pool created")
 	if err := a.createVertexBuffer(); err != nil {
 		return err
 	}
+	log.Printf("Vertex buffer created")
 	if err := a.createIndexBuffer(); err != nil {
 		return err
 	}
+	log.Printf("Index buffer created")
+	if err := a.createTextureImage(); err != nil {
+		return err
+	}
+	log.Printf("Texture image created")
+	if err := a.createTextureImageView(); err != nil {
+		return err
+	}
+	log.Printf("Texture view created")
+	if err := a.createTextureSampler(); err != nil {
+		return err
+	}
+	log.Printf("Texture sampler created")
 	if err := a.createUniformBuffers(); err != nil {
 		return err
 	}
+	log.Printf("Uniform buffers created")
 	if err := a.createDescriptorPool(); err != nil {
 		return err
 	}
+	log.Printf("Descriptor pool created")
 	if err := a.createDescriptorSets(); err != nil {
 		return err
 	}
+	log.Printf("Descriptor sets created")
 	if err := a.allocateCommandBuffers(); err != nil {
 		return err
 	}
+	log.Printf("Command buffers allocated")
 	if err := a.createSyncObjects(); err != nil {
 		return err
 	}
 	a.startTime = time.Now()
+	log.Printf("Vulkan initialization complete (swapchain images: %d)", len(a.swapchainImages))
 	return nil
 }
 
 func (a *VulkanApp) createInstance() error {
-	if a.cfg.enableValidation && !a.validationLayersSupported() {
-		return errors.New("requested validation layers not available")
-	}
-
 	if !glfw.VulkanSupported() {
 		return errors.New("GLFW Vulkan loader not found")
 	}
 
+	if a.cfg.enableValidation && !a.validationLayersSupported() {
+		log.Printf("validation layers not available; continuing without them")
+		a.cfg.enableValidation = false
+	}
+
+	appName := makeCString("Kube Vulkan")
+	engineName := makeCString("No Engine")
+	defer C.free(unsafe.Pointer(appName.cptr))
+	defer C.free(unsafe.Pointer(engineName.cptr))
+
 	appInfo := vulkan.ApplicationInfo{
 		SType:              vulkan.StructureTypeApplicationInfo,
-		PApplicationName:   "Kube Vulkan",
+		PApplicationName:   appName.str,
 		ApplicationVersion: vulkan.MakeVersion(0, 1, 0),
-		PEngineName:        "No Engine",
+		PEngineName:        engineName.str,
 		EngineVersion:      vulkan.MakeVersion(0, 1, 0),
 		ApiVersion:         vulkan.MakeVersion(1, 1, 0),
 	}
 
-	extensions := a.window.GetRequiredInstanceExtensions()
+	rawExts := a.window.GetRequiredInstanceExtensions()
+	extensions, cExtPtrs := makeCStringSlice(rawExts)
 	if a.cfg.enableValidation {
-		extensions = append(extensions, "VK_EXT_debug_report")
+		cs := makeCString("VK_EXT_debug_report")
+		extensions = append(extensions, cs.str)
+		cExtPtrs = append(cExtPtrs, cs.cptr)
+	}
+	defer freeCStrings(cExtPtrs)
+
+	var cLayerPtrs []*C.char
+	if a.cfg.enableValidation {
+		_, cLayerPtrs = makeCStringSlice(validationLayers)
+		defer freeCStrings(cLayerPtrs)
 	}
 
 	createInfo := vulkan.InstanceCreateInfo{
@@ -246,13 +366,34 @@ func (a *VulkanApp) createInstance() error {
 		PpEnabledExtensionNames: extensions,
 	}
 	if a.cfg.enableValidation {
-		createInfo.EnabledLayerCount = uint32(len(validationLayers))
-		createInfo.PpEnabledLayerNames = validationLayers
+		layerNames, cPtrs := makeCStringSlice(validationLayers)
+		cLayerPtrs = append(cLayerPtrs, cPtrs...)
+		createInfo.EnabledLayerCount = uint32(len(layerNames))
+		createInfo.PpEnabledLayerNames = layerNames
 	}
 
-	if res := vulkan.CreateInstance(&createInfo, nil, &a.instance); res != vulkan.Success {
+	var pin runtime.Pinner
+	pin.Pin(&createInfo)
+	pin.Pin(&appInfo)
+	if len(extensions) > 0 {
+		pin.Pin(&extensions[0])
+	}
+	if a.cfg.enableValidation && createInfo.EnabledLayerCount > 0 {
+		pin.Pin(&createInfo.PpEnabledLayerNames[0])
+	}
+	defer pin.Unpin()
+
+	var zeroInstance vulkan.Instance
+	instanceOut := (*vulkan.Instance)(C.malloc(C.size_t(unsafe.Sizeof(zeroInstance))))
+	if instanceOut == nil {
+		return fmt.Errorf("create instance: failed to allocate output handle")
+	}
+	defer C.free(unsafe.Pointer(instanceOut))
+
+	if res := vulkan.CreateInstance(&createInfo, nil, instanceOut); res != vulkan.Success {
 		return fmt.Errorf("create instance: %w", vulkan.Error(res))
 	}
+	a.instance = *instanceOut
 	return nil
 }
 
@@ -432,34 +573,86 @@ func (a *VulkanApp) createLogicalDevice() error {
 	}
 
 	deviceFeatures := vulkan.PhysicalDeviceFeatures{}
+	extNames, extPtrs := makeCStringSlice(deviceExtensions)
+	defer freeCStrings(extPtrs)
+
 	createInfo := vulkan.DeviceCreateInfo{
 		SType:                   vulkan.StructureTypeDeviceCreateInfo,
 		PQueueCreateInfos:       queueInfos,
 		QueueCreateInfoCount:    uint32(len(queueInfos)),
 		PEnabledFeatures:        []vulkan.PhysicalDeviceFeatures{deviceFeatures},
-		PpEnabledExtensionNames: deviceExtensions,
-		EnabledExtensionCount:   uint32(len(deviceExtensions)),
-	}
-	if a.cfg.enableValidation {
-		createInfo.EnabledLayerCount = uint32(len(validationLayers))
-		createInfo.PpEnabledLayerNames = validationLayers
+		PpEnabledExtensionNames: extNames,
+		EnabledExtensionCount:   uint32(len(extNames)),
 	}
 
-	if res := vulkan.CreateDevice(a.physicalDevice, &createInfo, nil, &a.device); res != vulkan.Success {
+	var layerNames []string
+	var layerPtrs []*C.char
+	if a.cfg.enableValidation {
+		layerNames, layerPtrs = makeCStringSlice(validationLayers)
+		createInfo.EnabledLayerCount = uint32(len(layerNames))
+		createInfo.PpEnabledLayerNames = layerNames
+	}
+	defer freeCStrings(layerPtrs)
+
+	var pin runtime.Pinner
+	defer pin.Unpin()
+
+	pin.Pin(&createInfo)
+	pin.Pin(&queueInfos[0])
+	for i := range queueInfos {
+		if len(queueInfos[i].PQueuePriorities) > 0 {
+			pin.Pin(&queueInfos[i].PQueuePriorities[0])
+		}
+	}
+	pin.Pin(&createInfo.PQueueCreateInfos[0])
+	if len(extNames) > 0 {
+		pin.Pin(&extNames[0])
+	}
+	if a.cfg.enableValidation && len(layerNames) > 0 {
+		pin.Pin(&layerNames[0])
+	}
+	pin.Pin(&createInfo.PEnabledFeatures[0])
+
+	var zeroDevice vulkan.Device
+	deviceOut := (*vulkan.Device)(C.malloc(C.size_t(unsafe.Sizeof(zeroDevice))))
+	if deviceOut == nil {
+		return fmt.Errorf("allocate device handle")
+	}
+	defer C.free(unsafe.Pointer(deviceOut))
+
+	if res := vulkan.CreateDevice(a.physicalDevice, &createInfo, nil, deviceOut); res != vulkan.Success {
 		return fmt.Errorf("create logical device: %w", vulkan.Error(res))
 	}
 
-	vulkan.GetDeviceQueue(a.device, a.queues.graphicsFamily, 0, &a.graphicsQueue)
-	vulkan.GetDeviceQueue(a.device, a.queues.presentFamily, 0, &a.presentQueue)
+	a.device = *deviceOut
+
+	var zeroQueue vulkan.Queue
+	queueOut := (*vulkan.Queue)(C.malloc(C.size_t(unsafe.Sizeof(zeroQueue))))
+	if queueOut == nil {
+		return fmt.Errorf("allocate graphics queue handle")
+	}
+	defer C.free(unsafe.Pointer(queueOut))
+	vulkan.GetDeviceQueue(a.device, a.queues.graphicsFamily, 0, queueOut)
+	a.graphicsQueue = *queueOut
+
+	queuePresentOut := (*vulkan.Queue)(C.malloc(C.size_t(unsafe.Sizeof(zeroQueue))))
+	if queuePresentOut == nil {
+		return fmt.Errorf("allocate present queue handle")
+	}
+	defer C.free(unsafe.Pointer(queuePresentOut))
+	vulkan.GetDeviceQueue(a.device, a.queues.presentFamily, 0, queuePresentOut)
+	a.presentQueue = *queuePresentOut
 	return nil
 }
 
 func (a *VulkanApp) querySwapchainSupport(device vulkan.PhysicalDevice) swapchainSupport {
 	var details swapchainSupport
+	log.Printf("querySwapchainSupport: capabilities")
 	vulkan.GetPhysicalDeviceSurfaceCapabilities(device, a.surface, &details.capabilities)
 	details.capabilities.Deref()
 
 	var formatCount uint32
+	log.Printf("querySwapchainSupport: formats")
 	vulkan.GetPhysicalDeviceSurfaceFormats(device, a.surface, &formatCount, nil)
 	if formatCount > 0 {
 		details.formats = make([]vulkan.SurfaceFormat, formatCount)
@@ -470,12 +663,14 @@ func (a *VulkanApp) querySwapchainSupport(device vulkan.PhysicalDevice) swapchai
 	}
 
 	var presentCount uint32
+	log.Printf("querySwapchainSupport: present modes")
 	vulkan.GetPhysicalDeviceSurfacePresentModes(device, a.surface, &presentCount, nil)
 	if presentCount > 0 {
 		details.presentModes = make([]vulkan.PresentMode, presentCount)
 		vulkan.GetPhysicalDeviceSurfacePresentModes(device, a.surface, &presentCount, details.presentModes)
 	}
 
+	log.Printf("querySwapchainSupport: caps done (formats=%d presentModes=%d)", len(details.formats), len(details.presentModes))
 	return details
 }
 
@@ -498,7 +693,7 @@ func chooseSwapPresentMode(available []vulkan.PresentMode) vulkan.PresentMode {
 }
 
 func chooseSwapExtent(caps vulkan.SurfaceCapabilities, window *glfw.Window) vulkan.Extent2D {
-	if caps.CurrentExtent.Width != math.MaxUint32 {
+	if caps.CurrentExtent.Width != math.MaxUint32 && caps.CurrentExtent.Width != 0 && caps.CurrentExtent.Height != 0 {
 		return caps.CurrentExtent
 	}
 	w, h := window.GetFramebufferSize()
@@ -506,14 +701,42 @@ func chooseSwapExtent(caps vulkan.SurfaceCapabilities, window *glfw.Window) vulk
 		Width:  uint32(w),
 		Height: uint32(h),
 	}
+	if extent.Width == 0 {
+		extent.Width = 800
+	}
+	if extent.Height == 0 {
+		extent.Height = 600
+	}
 	min := caps.MinImageExtent
 	max := caps.MaxImageExtent
+	if max.Width == 0 {
+		max.Width = extent.Width
+	}
+	if max.Height == 0 {
+		max.Height = extent.Height
+	}
+	if min.Width == 0 {
+		min.Width = 1
+	}
+	if min.Height == 0 {
+		min.Height = 1
+	}
 	extent.Width = uint32(clamp(uint64(extent.Width), uint64(min.Width), uint64(max.Width)))
 	extent.Height = uint32(clamp(uint64(extent.Height), uint64(min.Height), uint64(max.Height)))
 	return extent
 }
 
 func (a *VulkanApp) createSwapchain() error {
+	// Ensure the window has a non-zero framebuffer before querying swapchain support.
+	for {
+		w, h := a.window.GetFramebufferSize()
+		if w > 0 && h > 0 {
+			break
+		}
+		glfw.WaitEventsTimeout(0.01)
+	}
+
+	log.Printf("createSwapchain: querying support")
 	support := a.querySwapchainSupport(a.physicalDevice)
 
 	surfaceFormat := chooseSwapSurfaceFormat(support.formats)
@@ -524,6 +747,8 @@ func (a *VulkanApp) createSwapchain() error {
 	if support.capabilities.MaxImageCount > 0 && imageCount > support.capabilities.MaxImageCount {
 		imageCount = support.capabilities.MaxImageCount
 	}
+
+	log.Printf("createSwapchain: creating swapchain extent=%dx%d images=%d format=%v mode=%v", extent.Width, extent.Height, imageCount, surfaceFormat.Format, presentMode)
 
 	createInfo := vulkan.SwapchainCreateInfo{
 		SType:            vulkan.StructureTypeSwapchainCreateInfo,
@@ -550,16 +775,26 @@ func (a *VulkanApp) createSwapchain() error {
 		createInfo.ImageSharingMode = vulkan.SharingModeExclusive
 	}
 
-	if res := vulkan.CreateSwapchain(a.device, &createInfo, nil, &a.swapchain); res != vulkan.Success {
+	var zeroSwapchain vulkan.Swapchain
+	swapOut := (*vulkan.Swapchain)(C.malloc(C.size_t(unsafe.Sizeof(zeroSwapchain))))
+	if swapOut == nil {
+		return fmt.Errorf("allocate swapchain handle")
+	}
+	defer C.free(unsafe.Pointer(swapOut))
+
+	if res := vulkan.CreateSwapchain(a.device, &createInfo, nil, swapOut); res != vulkan.Success {
 		return fmt.Errorf("create swapchain: %w", vulkan.Error(res))
 	}
+	a.swapchain = *swapOut
 
 	var count uint32
+	log.Printf("createSwapchain: querying images")
 	vulkan.GetSwapchainImages(a.device, a.swapchain, &count, nil)
 	a.swapchainImages = make([]vulkan.Image, count)
 	vulkan.GetSwapchainImages(a.device, a.swapchain, &count, a.swapchainImages)
 	a.swapchainFormat = surfaceFormat.Format
 	a.swapchainExtent = extent
+	log.Printf("createSwapchain: created with %d images", count)
 	return nil
 }
 
@@ -576,6 +811,9 @@ func (a *VulkanApp) createImageViews() error {
 }
 
 func (a *VulkanApp) createDepthResources() error {
+	if a.swapchainExtent.Width == 0 || a.swapchainExtent.Height == 0 {
+		return fmt.Errorf("swapchain extent is zero; cannot create depth resources")
+	}
 	depthFormat, err := a.findDepthFormat()
 	if err != nil {
 		return err
@@ -587,11 +825,105 @@ func (a *VulkanApp) createDepthResources() error {
 	}
 	view, err := a.createImageView(image, depthFormat, vulkan.ImageAspectFlags(vulkan.ImageAspectDepthBit))
 	if err != nil {
+		vulkan.DestroyImage(a.device, image, nil)
+		vulkan.FreeMemory(a.device, memory, nil)
 		return fmt.Errorf("create depth image view: %w", err)
 	}
 	a.depthImage = image
 	a.depthImageMemory = memory
 	a.depthImageView = view
+	return nil
+}
+
+func (a *VulkanApp) createTextureImage() error {
+	// Simple 2x2 checker texture.
+	texWidth, texHeight := uint32(2), uint32(2)
+	pixels := []byte{
+		255, 255, 255, 255, 50, 50, 50, 255,
+		50, 50, 50, 255, 255, 255, 255, 255,
+	}
+
+	imageSize := vulkan.DeviceSize(len(pixels))
+	stageBuf, stageMem, err := a.createBuffer(imageSize, vulkan.BufferUsageFlags(vulkan.BufferUsageTransferSrcBit), vulkan.MemoryPropertyHostVisibleBit|vulkan.MemoryPropertyHostCoherentBit)
+	if err != nil {
+		return fmt.Errorf("create staging buffer: %w", err)
+	}
+	defer vulkan.DestroyBuffer(a.device, stageBuf, nil)
+	defer vulkan.FreeMemory(a.device, stageMem, nil)
+
+	var data unsafe.Pointer
+	if res := vulkan.MapMemory(a.device, stageMem, 0, imageSize, 0, &data); res != vulkan.Success {
+		return fmt.Errorf("map staging buffer: %w", vulkan.Error(res))
+	}
+	dst := (*[1 << 30]byte)(data)[:imageSize:imageSize]
+	copy(dst, pixels)
+	vulkan.UnmapMemory(a.device, stageMem)
+
+	image, memory, err := a.createImage(texWidth, texHeight, vulkan.FormatR8g8b8a8Srgb, vulkan.ImageTilingOptimal, vulkan.ImageUsageFlags(vulkan.ImageUsageTransferDstBit|vulkan.ImageUsageSampledBit), vulkan.MemoryPropertyDeviceLocalBit)
+	if err != nil {
+		return fmt.Errorf("create texture image: %w", err)
+	}
+
+	if err := a.transitionImageLayout(image, vulkan.FormatR8g8b8a8Srgb, vulkan.ImageLayoutUndefined, vulkan.ImageLayoutTransferDstOptimal); err != nil {
+		vulkan.DestroyImage(a.device, image, nil)
+		vulkan.FreeMemory(a.device, memory, nil)
+		return err
+	}
+	if err := a.copyBufferToImage(stageBuf, image, texWidth, texHeight); err != nil {
+		vulkan.DestroyImage(a.device, image, nil)
+		vulkan.FreeMemory(a.device, memory, nil)
+		return err
+	}
+	if err := a.transitionImageLayout(image, vulkan.FormatR8g8b8a8Srgb, vulkan.ImageLayoutTransferDstOptimal, vulkan.ImageLayoutShaderReadOnlyOptimal); err != nil {
+		vulkan.DestroyImage(a.device, image, nil)
+		vulkan.FreeMemory(a.device, memory, nil)
+		return err
+	}
+
+	a.textureImage = image
+	a.textureImageMemory = memory
+	return nil
+}
+
+func (a *VulkanApp) createTextureImageView() error {
+	view, err := a.createImageView(a.textureImage, vulkan.FormatR8g8b8a8Srgb, vulkan.ImageAspectFlags(vulkan.ImageAspectColorBit))
+	if err != nil {
+		return err
+	}
+	a.textureImageView = view
+	return nil
+}
+
+func (a *VulkanApp) createTextureSampler() error {
+	samplerInfo := vulkan.SamplerCreateInfo{
+		SType:                   vulkan.StructureTypeSamplerCreateInfo,
+		MagFilter:               vulkan.FilterLinear,
+		MinFilter:               vulkan.FilterLinear,
+		AddressModeU:            vulkan.SamplerAddressModeRepeat,
+		AddressModeV:            vulkan.SamplerAddressModeRepeat,
+		AddressModeW:            vulkan.SamplerAddressModeRepeat,
+		AnisotropyEnable:        vulkan.False,
+		MaxAnisotropy:           1.0,
+		BorderColor:             vulkan.BorderColorIntOpaqueBlack,
+		UnnormalizedCoordinates: vulkan.False,
+		CompareEnable:           vulkan.False,
+		CompareOp:               vulkan.CompareOpAlways,
+		MipmapMode:              vulkan.SamplerMipmapModeLinear,
+		MipLodBias:              0,
+		MinLod:                  0,
+		MaxLod:                  0,
+	}
+	var zero vulkan.Sampler
+	samplerOut := (*vulkan.Sampler)(C.malloc(C.size_t(unsafe.Sizeof(zero))))
+	if samplerOut == nil {
+		return fmt.Errorf("allocate sampler handle")
+	}
+	defer C.free(unsafe.Pointer(samplerOut))
+
+	if res := vulkan.CreateSampler(a.device, &samplerInfo, nil, samplerOut); res != vulkan.Success {
+		return fmt.Errorf("create sampler: %w", vulkan.Error(res))
+	}
+	a.textureSampler = *samplerOut
 	return nil
 }
 
@@ -638,34 +970,56 @@ func (a *VulkanApp) createImage(width, height uint32, format vulkan.Format, tili
 		SharingMode:   vulkan.SharingModeExclusive,
 	}
 
-	var image vulkan.Image
-	if res := vulkan.CreateImage(a.device, &createInfo, nil, &image); res != vulkan.Success {
+	var zeroImage vulkan.Image
+	imageOut := (*vulkan.Image)(C.malloc(C.size_t(unsafe.Sizeof(zeroImage))))
+	if imageOut == nil {
+		return vulkan.Image(vulkan.NullHandle), vulkan.DeviceMemory(vulkan.NullHandle), fmt.Errorf("allocate image handle")
+	}
+	defer C.free(unsafe.Pointer(imageOut))
+
+	if res := vulkan.CreateImage(a.device, &createInfo, nil, imageOut); res != vulkan.Success {
 		return vulkan.Image(vulkan.NullHandle), vulkan.DeviceMemory(vulkan.NullHandle), fmt.Errorf("create image: %w", vulkan.Error(res))
 	}
 
 	var memRequirements vulkan.MemoryRequirements
-	vulkan.GetImageMemoryRequirements(a.device, image, &memRequirements)
+	vulkan.GetImageMemoryRequirements(a.device, *imageOut, &memRequirements)
 	memRequirements.Deref()
+
+	memoryType, ok := a.findMemoryType(memRequirements.MemoryTypeBits, properties)
+	if !ok {
+		vulkan.DestroyImage(a.device, *imageOut, nil)
+		return vulkan.Image(vulkan.NullHandle), vulkan.DeviceMemory(vulkan.NullHandle), fmt.Errorf("no suitable memory type for image")
+	}
 
 	allocInfo := vulkan.MemoryAllocateInfo{
 		SType:           vulkan.StructureTypeMemoryAllocateInfo,
 		AllocationSize:  memRequirements.Size,
-		MemoryTypeIndex: a.findMemoryType(memRequirements.MemoryTypeBits, properties),
+		MemoryTypeIndex: memoryType,
 	}
 
-	var memory vulkan.DeviceMemory
-	if res := vulkan.AllocateMemory(a.device, &allocInfo, nil, &memory); res != vulkan.Success {
+	var zeroMem vulkan.DeviceMemory
+	memoryOut := (*vulkan.DeviceMemory)(C.malloc(C.size_t(unsafe.Sizeof(zeroMem))))
+	if memoryOut == nil {
+		vulkan.DestroyImage(a.device, *imageOut, nil)
+		return vulkan.Image(vulkan.NullHandle), vulkan.DeviceMemory(vulkan.NullHandle), fmt.Errorf("allocate image memory handle")
+	}
+	defer C.free(unsafe.Pointer(memoryOut))
+
+	if res := vulkan.AllocateMemory(a.device, &allocInfo, nil, memoryOut); res != vulkan.Success {
+		vulkan.DestroyImage(a.device, *imageOut, nil)
 		return vulkan.Image(vulkan.NullHandle), vulkan.DeviceMemory(vulkan.NullHandle), fmt.Errorf("allocate image memory: %w", vulkan.Error(res))
 	}
 
-	if res := vulkan.BindImageMemory(a.device, image, memory, 0); res != vulkan.Success {
+	if res := vulkan.BindImageMemory(a.device, *imageOut, *memoryOut, 0); res != vulkan.Success {
+		vulkan.FreeMemory(a.device, *memoryOut, nil)
+		vulkan.DestroyImage(a.device, *imageOut, nil)
 		return vulkan.Image(vulkan.NullHandle), vulkan.DeviceMemory(vulkan.NullHandle), fmt.Errorf("bind image memory: %w", vulkan.Error(res))
 	}
 
-	return image, memory, nil
+	return *imageOut, *memoryOut, nil
 }
 
-func (a *VulkanApp) findMemoryType(typeFilter uint32, properties vulkan.MemoryPropertyFlagBits) uint32 {
+func (a *VulkanApp) findMemoryType(typeFilter uint32, properties vulkan.MemoryPropertyFlagBits) (uint32, bool) {
 	var memProps vulkan.PhysicalDeviceMemoryProperties
 	vulkan.GetPhysicalDeviceMemoryProperties(a.physicalDevice, &memProps)
 	memProps.Deref()
@@ -674,10 +1028,10 @@ func (a *VulkanApp) findMemoryType(typeFilter uint32, properties vulkan.MemoryPr
 		memoryType := memProps.MemoryTypes[i]
 		memoryType.Deref()
 		if typeFilter&(1<<i) != 0 && memoryType.PropertyFlags&vulkan.MemoryPropertyFlags(properties) == vulkan.MemoryPropertyFlags(properties) {
-			return i
+			return i, true
 		}
 	}
-	return 0
+	return 0, false
 }
 
 func (a *VulkanApp) createImageView(image vulkan.Image, format vulkan.Format, aspectFlags vulkan.ImageAspectFlags) (vulkan.ImageView, error) {
@@ -700,11 +1054,84 @@ func (a *VulkanApp) createImageView(image vulkan.Image, format vulkan.Format, as
 			LayerCount:     1,
 		},
 	}
-	var view vulkan.ImageView
-	if res := vulkan.CreateImageView(a.device, &viewInfo, nil, &view); res != vulkan.Success {
+	var zero vulkan.ImageView
+	viewOut := (*vulkan.ImageView)(C.malloc(C.size_t(unsafe.Sizeof(zero))))
+	if viewOut == nil {
+		return vulkan.ImageView(vulkan.NullHandle), fmt.Errorf("allocate image view handle")
+	}
+	defer C.free(unsafe.Pointer(viewOut))
+	if res := vulkan.CreateImageView(a.device, &viewInfo, nil, viewOut); res != vulkan.Success {
 		return vulkan.ImageView(vulkan.NullHandle), fmt.Errorf("create image view: %w", vulkan.Error(res))
 	}
-	return view, nil
+	return *viewOut, nil
+}
+
+func (a *VulkanApp) transitionImageLayout(image vulkan.Image, format vulkan.Format, oldLayout, newLayout vulkan.ImageLayout) error {
+	return a.oneTimeCommands(func(cb vulkan.CommandBuffer) {
+		subresource := vulkan.ImageSubresourceRange{
+			AspectMask:     vulkan.ImageAspectFlags(vulkan.ImageAspectColorBit),
+			BaseMipLevel:   0,
+			LevelCount:     1,
+			BaseArrayLayer: 0,
+			LayerCount:     1,
+		}
+		if newLayout == vulkan.ImageLayoutDepthStencilAttachmentOptimal {
+			subresource.AspectMask = vulkan.ImageAspectFlags(vulkan.ImageAspectDepthBit)
+		}
+		barrier := vulkan.ImageMemoryBarrier{
+			SType:               vulkan.StructureTypeImageMemoryBarrier,
+			OldLayout:           oldLayout,
+			NewLayout:           newLayout,
+			SrcQueueFamilyIndex: vulkan.QueueFamilyIgnored,
+			DstQueueFamilyIndex: vulkan.QueueFamilyIgnored,
+			Image:               image,
+			SubresourceRange:    subresource,
+		}
+		var srcStage, dstStage vulkan.PipelineStageFlags
+		switch oldLayout {
+		case vulkan.ImageLayoutUndefined:
+			barrier.SrcAccessMask = 0
+			srcStage = vulkan.PipelineStageFlags(vulkan.PipelineStageTopOfPipeBit)
+		case vulkan.ImageLayoutTransferDstOptimal:
+			barrier.SrcAccessMask = vulkan.AccessFlags(vulkan.AccessTransferWriteBit)
+			srcStage = vulkan.PipelineStageFlags(vulkan.PipelineStageTransferBit)
+		default:
+			srcStage = vulkan.PipelineStageFlags(vulkan.PipelineStageTopOfPipeBit)
+		}
+		switch newLayout {
+		case vulkan.ImageLayoutTransferDstOptimal:
+			barrier.DstAccessMask = vulkan.AccessFlags(vulkan.AccessTransferWriteBit)
+			dstStage = vulkan.PipelineStageFlags(vulkan.PipelineStageTransferBit)
+		case vulkan.ImageLayoutShaderReadOnlyOptimal:
+			barrier.DstAccessMask = vulkan.AccessFlags(vulkan.AccessShaderReadBit)
+			dstStage = vulkan.PipelineStageFlags(vulkan.PipelineStageFragmentShaderBit)
+		case vulkan.ImageLayoutDepthStencilAttachmentOptimal:
+			barrier.DstAccessMask = vulkan.AccessFlags(vulkan.AccessDepthStencilAttachmentReadBit | vulkan.AccessDepthStencilAttachmentWriteBit)
+			dstStage = vulkan.PipelineStageFlags(vulkan.PipelineStageEarlyFragmentTestsBit | vulkan.PipelineStageLateFragmentTestsBit)
+		default:
+			dstStage = vulkan.PipelineStageFlags(vulkan.PipelineStageBottomOfPipeBit)
+		}
+		vulkan.CmdPipelineBarrier(cb, srcStage, dstStage, 0, 0, nil, 0, nil, 1, []vulkan.ImageMemoryBarrier{barrier})
+	})
+}
+
+func (a *VulkanApp) copyBufferToImage(buffer vulkan.Buffer, image vulkan.Image, width, height uint32) error {
+	return a.oneTimeCommands(func(cb vulkan.CommandBuffer) {
+		region := vulkan.BufferImageCopy{
+			BufferOffset:      0,
+			BufferRowLength:   0,
+			BufferImageHeight: 0,
+			ImageSubresource: vulkan.ImageSubresourceLayers{
+				AspectMask:     vulkan.ImageAspectFlags(vulkan.ImageAspectColorBit),
+				MipLevel:       0,
+				BaseArrayLayer: 0,
+				LayerCount:     1,
+			},
+			ImageOffset: vulkan.Offset3D{X: 0, Y: 0, Z: 0},
+			ImageExtent: vulkan.Extent3D{Width: width, Height: height, Depth: 1},
+		}
+		vulkan.CmdCopyBufferToImage(cb, buffer, image, vulkan.ImageLayoutTransferDstOptimal, 1, []vulkan.BufferImageCopy{region})
+	})
 }
 
 func (a *VulkanApp) createRenderPass() error {
@@ -766,9 +1193,17 @@ func (a *VulkanApp) createRenderPass() error {
 		PDependencies:   []vulkan.SubpassDependency{dependency},
 	}
 
-	if res := vulkan.CreateRenderPass(a.device, &createInfo, nil, &a.renderPass); res != vulkan.Success {
+	var zeroRenderPass vulkan.RenderPass
+	rpOut := (*vulkan.RenderPass)(C.malloc(C.size_t(unsafe.Sizeof(zeroRenderPass))))
+	if rpOut == nil {
+		return fmt.Errorf("allocate render pass handle")
+	}
+	defer C.free(unsafe.Pointer(rpOut))
+
+	if res := vulkan.CreateRenderPass(a.device, &createInfo, nil, rpOut); res != vulkan.Success {
 		return fmt.Errorf("create render pass: %w", vulkan.Error(res))
 	}
+	a.renderPass = *rpOut
 	return nil
 }
 
@@ -789,19 +1224,32 @@ func (a *VulkanApp) createUniformBuffers() error {
 }
 
 func (a *VulkanApp) createDescriptorPool() error {
-	poolSize := vulkan.DescriptorPoolSize{
-		Type:            vulkan.DescriptorTypeUniformBuffer,
-		DescriptorCount: uint32(len(a.swapchainImages)),
+	poolSizes := []vulkan.DescriptorPoolSize{
+		{
+			Type:            vulkan.DescriptorTypeUniformBuffer,
+			DescriptorCount: uint32(len(a.swapchainImages)),
+		},
+		{
+			Type:            vulkan.DescriptorTypeCombinedImageSampler,
+			DescriptorCount: uint32(len(a.swapchainImages)),
+		},
 	}
 	poolInfo := vulkan.DescriptorPoolCreateInfo{
 		SType:         vulkan.StructureTypeDescriptorPoolCreateInfo,
 		MaxSets:       uint32(len(a.swapchainImages)),
-		PoolSizeCount: 1,
-		PPoolSizes:    []vulkan.DescriptorPoolSize{poolSize},
+		PoolSizeCount: uint32(len(poolSizes)),
+		PPoolSizes:    poolSizes,
 	}
-	if res := vulkan.CreateDescriptorPool(a.device, &poolInfo, nil, &a.descriptorPool); res != vulkan.Success {
+	var zero vulkan.DescriptorPool
+	out := (*vulkan.DescriptorPool)(C.malloc(C.size_t(unsafe.Sizeof(zero))))
+	if out == nil {
+		return fmt.Errorf("allocate descriptor pool handle")
+	}
+	defer C.free(unsafe.Pointer(out))
+	if res := vulkan.CreateDescriptorPool(a.device, &poolInfo, nil, out); res != vulkan.Success {
 		return fmt.Errorf("create descriptor pool: %w", vulkan.Error(res))
 	}
+	a.descriptorPool = *out
 	return nil
 }
 
@@ -816,16 +1264,40 @@ func (a *VulkanApp) createDescriptorSets() error {
 		DescriptorSetCount: uint32(len(a.swapchainImages)),
 		PSetLayouts:        layouts,
 	}
-	a.descriptorSets = make([]vulkan.DescriptorSet, len(a.swapchainImages))
-	if res := vulkan.AllocateDescriptorSets(a.device, &allocInfo, &a.descriptorSets[0]); res != vulkan.Success {
+	count := len(a.swapchainImages)
+	if count == 0 {
+		return fmt.Errorf("no swapchain images for descriptor sets")
+	}
+	// Allocate descriptor set array in C memory to avoid Go pointer issues.
+	var zeroDS vulkan.DescriptorSet
+	cBuf := C.calloc(C.size_t(count), C.size_t(unsafe.Sizeof(zeroDS)))
+	if cBuf == nil {
+		return fmt.Errorf("allocate descriptor set buffer")
+	}
+	defer C.free(cBuf)
+	sh := &reflect.SliceHeader{
+		Data: uintptr(cBuf),
+		Len:  count,
+		Cap:  count,
+	}
+	tmp := *(*[]vulkan.DescriptorSet)(unsafe.Pointer(sh))
+
+	if res := vulkan.AllocateDescriptorSets(a.device, &allocInfo, &tmp[0]); res != vulkan.Success {
 		return fmt.Errorf("allocate descriptor sets: %w", vulkan.Error(res))
 	}
+	a.descriptorSets = make([]vulkan.DescriptorSet, count)
+	copy(a.descriptorSets, tmp)
 
 	for i := range a.descriptorSets {
 		bufferInfo := vulkan.DescriptorBufferInfo{
 			Buffer: a.uniformBuffers[i],
 			Offset: 0,
 			Range:  vulkan.DeviceSize(unsafe.Sizeof(uniformBufferObject{})),
+		}
+		imageInfo := vulkan.DescriptorImageInfo{
+			ImageLayout: vulkan.ImageLayoutShaderReadOnlyOptimal,
+			ImageView:   a.textureImageView,
+			Sampler:     a.textureSampler,
 		}
 		write := vulkan.WriteDescriptorSet{
 			SType:           vulkan.StructureTypeWriteDescriptorSet,
@@ -836,7 +1308,16 @@ func (a *VulkanApp) createDescriptorSets() error {
 			DescriptorCount: 1,
 			PBufferInfo:     []vulkan.DescriptorBufferInfo{bufferInfo},
 		}
-		vulkan.UpdateDescriptorSets(a.device, 1, []vulkan.WriteDescriptorSet{write}, 0, nil)
+		writeSampler := vulkan.WriteDescriptorSet{
+			SType:           vulkan.StructureTypeWriteDescriptorSet,
+			DstSet:          a.descriptorSets[i],
+			DstBinding:      1,
+			DstArrayElement: 0,
+			DescriptorType:  vulkan.DescriptorTypeCombinedImageSampler,
+			DescriptorCount: 1,
+			PImageInfo:      []vulkan.DescriptorImageInfo{imageInfo},
+		}
+		vulkan.UpdateDescriptorSets(a.device, 2, []vulkan.WriteDescriptorSet{write, writeSampler}, 0, nil)
 	}
 	return nil
 }
@@ -932,14 +1413,27 @@ func (a *VulkanApp) createDescriptorSetLayout() error {
 		DescriptorCount: 1,
 		StageFlags:      vulkan.ShaderStageFlags(vulkan.ShaderStageVertexBit),
 	}
+	samplerBinding := vulkan.DescriptorSetLayoutBinding{
+		Binding:         1,
+		DescriptorType:  vulkan.DescriptorTypeCombinedImageSampler,
+		DescriptorCount: 1,
+		StageFlags:      vulkan.ShaderStageFlags(vulkan.ShaderStageFragmentBit),
+	}
 	layoutInfo := vulkan.DescriptorSetLayoutCreateInfo{
 		SType:        vulkan.StructureTypeDescriptorSetLayoutCreateInfo,
-		BindingCount: 1,
-		PBindings:    []vulkan.DescriptorSetLayoutBinding{uLayoutBinding},
+		BindingCount: 2,
+		PBindings:    []vulkan.DescriptorSetLayoutBinding{uLayoutBinding, samplerBinding},
 	}
-	if res := vulkan.CreateDescriptorSetLayout(a.device, &layoutInfo, nil, &a.descriptorSetLayout); res != vulkan.Success {
+	var zero vulkan.DescriptorSetLayout
+	out := (*vulkan.DescriptorSetLayout)(C.malloc(C.size_t(unsafe.Sizeof(zero))))
+	if out == nil {
+		return fmt.Errorf("allocate descriptor set layout handle")
+	}
+	defer C.free(unsafe.Pointer(out))
+	if res := vulkan.CreateDescriptorSetLayout(a.device, &layoutInfo, nil, out); res != vulkan.Success {
 		return fmt.Errorf("create descriptor set layout: %w", vulkan.Error(res))
 	}
+	a.descriptorSetLayout = *out
 	return nil
 }
 
@@ -988,6 +1482,7 @@ func (a *VulkanApp) createGraphicsPipeline() error {
 	attributeDescriptions := []vulkan.VertexInputAttributeDescription{
 		{Location: 0, Binding: 0, Format: vulkan.FormatR32g32b32Sfloat, Offset: uint32(unsafe.Offsetof(vertex{}.pos))},
 		{Location: 1, Binding: 0, Format: vulkan.FormatR32g32b32Sfloat, Offset: uint32(unsafe.Offsetof(vertex{}.color))},
+		{Location: 2, Binding: 0, Format: vulkan.FormatR32g32Sfloat, Offset: uint32(unsafe.Offsetof(vertex{}.uv))},
 	}
 
 	vertexInput := vulkan.PipelineVertexInputStateCreateInfo{
@@ -1065,9 +1560,16 @@ func (a *VulkanApp) createGraphicsPipeline() error {
 		PSetLayouts:            []vulkan.DescriptorSetLayout{a.descriptorSetLayout},
 		PushConstantRangeCount: 0,
 	}
-	if res := vulkan.CreatePipelineLayout(a.device, &pipelineLayoutInfo, nil, &a.pipelineLayout); res != vulkan.Success {
+	var zeroLayout vulkan.PipelineLayout
+	layoutOut := (*vulkan.PipelineLayout)(C.malloc(C.size_t(unsafe.Sizeof(zeroLayout))))
+	if layoutOut == nil {
+		return fmt.Errorf("allocate pipeline layout handle")
+	}
+	defer C.free(unsafe.Pointer(layoutOut))
+	if res := vulkan.CreatePipelineLayout(a.device, &pipelineLayoutInfo, nil, layoutOut); res != vulkan.Success {
 		return fmt.Errorf("create pipeline layout: %w", vulkan.Error(res))
 	}
+	a.pipelineLayout = *layoutOut
 
 	pipelineInfo := vulkan.GraphicsPipelineCreateInfo{
 		SType:               vulkan.StructureTypeGraphicsPipelineCreateInfo,
@@ -1085,7 +1587,21 @@ func (a *VulkanApp) createGraphicsPipeline() error {
 		Subpass:             0,
 	}
 
-	pipelines := make([]vulkan.Pipeline, 1)
+	// Allocate pipeline array in C memory to avoid Go pointer issues.
+	var zeroPipeline vulkan.Pipeline
+	cBuf := C.calloc(C.size_t(1), C.size_t(unsafe.Sizeof(zeroPipeline)))
+	if cBuf == nil {
+		vulkan.DestroyPipelineLayout(a.device, a.pipelineLayout, nil)
+		return fmt.Errorf("allocate pipeline buffer")
+	}
+	defer C.free(cBuf)
+	sh := &reflect.SliceHeader{
+		Data: uintptr(cBuf),
+		Len:  1,
+		Cap:  1,
+	}
+	pipelines := *(*[]vulkan.Pipeline)(unsafe.Pointer(sh))
+
 	if res := vulkan.CreateGraphicsPipelines(a.device, vulkan.PipelineCache(vulkan.NullHandle), 1, []vulkan.GraphicsPipelineCreateInfo{pipelineInfo}, nil, pipelines); res != vulkan.Success {
 		vulkan.DestroyPipelineLayout(a.device, a.pipelineLayout, nil)
 		return fmt.Errorf("create graphics pipeline: %w", vulkan.Error(res))
@@ -1123,25 +1639,45 @@ func (a *VulkanApp) createBuffer(size vulkan.DeviceSize, usage vulkan.BufferUsag
 		Usage:       usage,
 		SharingMode: vulkan.SharingModeExclusive,
 	}
-	var buffer vulkan.Buffer
-	if res := vulkan.CreateBuffer(a.device, &bufferInfo, nil, &buffer); res != vulkan.Success {
+	var zeroBuffer vulkan.Buffer
+	bufferOut := (*vulkan.Buffer)(C.malloc(C.size_t(unsafe.Sizeof(zeroBuffer))))
+	if bufferOut == nil {
+		return vulkan.Buffer(vulkan.NullHandle), vulkan.DeviceMemory(vulkan.NullHandle), fmt.Errorf("allocate buffer handle")
+	}
+	defer C.free(unsafe.Pointer(bufferOut))
+
+	if res := vulkan.CreateBuffer(a.device, &bufferInfo, nil, bufferOut); res != vulkan.Success {
 		return vulkan.Buffer(vulkan.NullHandle), vulkan.DeviceMemory(vulkan.NullHandle), fmt.Errorf("create buffer: %w", vulkan.Error(res))
 	}
 	var memReq vulkan.MemoryRequirements
-	vulkan.GetBufferMemoryRequirements(a.device, buffer, &memReq)
+	vulkan.GetBufferMemoryRequirements(a.device, *bufferOut, &memReq)
 	memReq.Deref()
+
+	memoryType, ok := a.findMemoryType(memReq.MemoryTypeBits, properties)
+	if !ok {
+		vulkan.DestroyBuffer(a.device, *bufferOut, nil)
+		return vulkan.Buffer(vulkan.NullHandle), vulkan.DeviceMemory(vulkan.NullHandle), fmt.Errorf("no suitable memory type for buffer")
+	}
+
 	allocInfo := vulkan.MemoryAllocateInfo{
 		SType:           vulkan.StructureTypeMemoryAllocateInfo,
 		AllocationSize:  memReq.Size,
-		MemoryTypeIndex: a.findMemoryType(memReq.MemoryTypeBits, properties),
+		MemoryTypeIndex: memoryType,
 	}
-	var bufferMemory vulkan.DeviceMemory
-	if res := vulkan.AllocateMemory(a.device, &allocInfo, nil, &bufferMemory); res != vulkan.Success {
-		vulkan.DestroyBuffer(a.device, buffer, nil)
+	var zeroMem vulkan.DeviceMemory
+	bufferMemoryOut := (*vulkan.DeviceMemory)(C.malloc(C.size_t(unsafe.Sizeof(zeroMem))))
+	if bufferMemoryOut == nil {
+		vulkan.DestroyBuffer(a.device, *bufferOut, nil)
+		return vulkan.Buffer(vulkan.NullHandle), vulkan.DeviceMemory(vulkan.NullHandle), fmt.Errorf("allocate buffer memory handle")
+	}
+	defer C.free(unsafe.Pointer(bufferMemoryOut))
+
+	if res := vulkan.AllocateMemory(a.device, &allocInfo, nil, bufferMemoryOut); res != vulkan.Success {
+		vulkan.DestroyBuffer(a.device, *bufferOut, nil)
 		return vulkan.Buffer(vulkan.NullHandle), vulkan.DeviceMemory(vulkan.NullHandle), fmt.Errorf("allocate buffer memory: %w", vulkan.Error(res))
 	}
-	vulkan.BindBufferMemory(a.device, buffer, bufferMemory, 0)
-	return buffer, bufferMemory, nil
+	vulkan.BindBufferMemory(a.device, *bufferOut, *bufferMemoryOut, 0)
+	return *bufferOut, *bufferMemoryOut, nil
 }
 
 func (a *VulkanApp) createFramebuffers() error {
@@ -1157,9 +1693,18 @@ func (a *VulkanApp) createFramebuffers() error {
 			Height:          a.swapchainExtent.Height,
 			Layers:          1,
 		}
-		if res := vulkan.CreateFramebuffer(a.device, &createInfo, nil, &a.framebuffers[i]); res != vulkan.Success {
+		var zero vulkan.Framebuffer
+		fbOut := (*vulkan.Framebuffer)(C.malloc(C.size_t(unsafe.Sizeof(zero))))
+		if fbOut == nil {
+			return fmt.Errorf("allocate framebuffer handle")
+		}
+		res := vulkan.CreateFramebuffer(a.device, &createInfo, nil, fbOut)
+		if res != vulkan.Success {
+			C.free(unsafe.Pointer(fbOut))
 			return fmt.Errorf("create framebuffer %d: %w", i, vulkan.Error(res))
 		}
+		a.framebuffers[i] = *fbOut
+		C.free(unsafe.Pointer(fbOut))
 	}
 	return nil
 }
@@ -1170,9 +1715,16 @@ func (a *VulkanApp) createCommandPool() error {
 		QueueFamilyIndex: a.queues.graphicsFamily,
 		Flags:            vulkan.CommandPoolCreateFlags(vulkan.CommandPoolCreateResetCommandBufferBit),
 	}
-	if res := vulkan.CreateCommandPool(a.device, &poolInfo, nil, &a.commandPool); res != vulkan.Success {
+	var zero vulkan.CommandPool
+	out := (*vulkan.CommandPool)(C.malloc(C.size_t(unsafe.Sizeof(zero))))
+	if out == nil {
+		return fmt.Errorf("allocate command pool handle")
+	}
+	defer C.free(unsafe.Pointer(out))
+	if res := vulkan.CreateCommandPool(a.device, &poolInfo, nil, out); res != vulkan.Success {
 		return fmt.Errorf("create command pool: %w", vulkan.Error(res))
 	}
+	a.commandPool = *out
 	return nil
 }
 
@@ -1183,10 +1735,28 @@ func (a *VulkanApp) allocateCommandBuffers() error {
 		Level:              vulkan.CommandBufferLevelPrimary,
 		CommandBufferCount: uint32(len(a.framebuffers)),
 	}
-	a.commandBuffers = make([]vulkan.CommandBuffer, len(a.framebuffers))
-	if res := vulkan.AllocateCommandBuffers(a.device, &allocInfo, a.commandBuffers); res != vulkan.Success {
+	count := len(a.framebuffers)
+	if count == 0 {
+		return fmt.Errorf("no framebuffers for command buffers")
+	}
+	var zeroCB vulkan.CommandBuffer
+	cBuf := C.calloc(C.size_t(count), C.size_t(unsafe.Sizeof(zeroCB)))
+	if cBuf == nil {
+		return fmt.Errorf("allocate command buffer array")
+	}
+	defer C.free(cBuf)
+	sh := &reflect.SliceHeader{
+		Data: uintptr(cBuf),
+		Len:  count,
+		Cap:  count,
+	}
+	tmp := *(*[]vulkan.CommandBuffer)(unsafe.Pointer(sh))
+
+	if res := vulkan.AllocateCommandBuffers(a.device, &allocInfo, tmp); res != vulkan.Success {
 		return fmt.Errorf("allocate command buffers: %w", vulkan.Error(res))
 	}
+	a.commandBuffers = make([]vulkan.CommandBuffer, count)
+	copy(a.commandBuffers, tmp)
 	return nil
 }
 
@@ -1205,21 +1775,155 @@ func (a *VulkanApp) createSyncObjects() error {
 	}
 
 	for i := 0; i < maxFramesInFlight; i++ {
-		if res := vulkan.CreateSemaphore(a.device, &semInfo, nil, &a.imageAvailable[i]); res != vulkan.Success {
+		var zeroSem vulkan.Semaphore
+		semOut := (*vulkan.Semaphore)(C.malloc(C.size_t(unsafe.Sizeof(zeroSem))))
+		if semOut == nil {
+			return fmt.Errorf("allocate semaphore handle")
+		}
+		res := vulkan.CreateSemaphore(a.device, &semInfo, nil, semOut)
+		if res != vulkan.Success {
+			C.free(unsafe.Pointer(semOut))
 			return fmt.Errorf("create imageAvailable semaphore %d: %w", i, vulkan.Error(res))
 		}
-		if res := vulkan.CreateSemaphore(a.device, &semInfo, nil, &a.renderFinished[i]); res != vulkan.Success {
+		a.imageAvailable[i] = *semOut
+		C.free(unsafe.Pointer(semOut))
+
+		semOut2 := (*vulkan.Semaphore)(C.malloc(C.size_t(unsafe.Sizeof(zeroSem))))
+		if semOut2 == nil {
+			return fmt.Errorf("allocate semaphore handle")
+		}
+		res = vulkan.CreateSemaphore(a.device, &semInfo, nil, semOut2)
+		if res != vulkan.Success {
+			C.free(unsafe.Pointer(semOut2))
 			return fmt.Errorf("create renderFinished semaphore %d: %w", i, vulkan.Error(res))
 		}
-		if res := vulkan.CreateFence(a.device, &fenceInfo, nil, &a.inFlightFences[i]); res != vulkan.Success {
+		a.renderFinished[i] = *semOut2
+		C.free(unsafe.Pointer(semOut2))
+
+		var zeroFence vulkan.Fence
+		fenceOut := (*vulkan.Fence)(C.malloc(C.size_t(unsafe.Sizeof(zeroFence))))
+		if fenceOut == nil {
+			return fmt.Errorf("allocate fence handle")
+		}
+		res = vulkan.CreateFence(a.device, &fenceInfo, nil, fenceOut)
+		if res != vulkan.Success {
+			C.free(unsafe.Pointer(fenceOut))
 			return fmt.Errorf("create fence %d: %w", i, vulkan.Error(res))
 		}
+		a.inFlightFences[i] = *fenceOut
+		C.free(unsafe.Pointer(fenceOut))
 	}
 	return nil
 }
 
 func (a *VulkanApp) requestSwapchainRecreate() {
 	a.framebufferResized = true
+}
+
+func (a *VulkanApp) oneTimeCommands(fn func(vulkan.CommandBuffer)) error {
+	allocInfo := vulkan.CommandBufferAllocateInfo{
+		SType:              vulkan.StructureTypeCommandBufferAllocateInfo,
+		CommandPool:        a.commandPool,
+		Level:              vulkan.CommandBufferLevelPrimary,
+		CommandBufferCount: 1,
+	}
+	buffers := make([]vulkan.CommandBuffer, 1)
+	if res := vulkan.AllocateCommandBuffers(a.device, &allocInfo, buffers); res != vulkan.Success {
+		return fmt.Errorf("allocate one-time command buffer: %w", vulkan.Error(res))
+	}
+	cb := buffers[0]
+	beginInfo := vulkan.CommandBufferBeginInfo{
+		SType:            vulkan.StructureTypeCommandBufferBeginInfo,
+		Flags:            vulkan.CommandBufferUsageFlags(vulkan.CommandBufferUsageOneTimeSubmitBit),
+		PInheritanceInfo: nil,
+	}
+	if res := vulkan.BeginCommandBuffer(cb, &beginInfo); res != vulkan.Success {
+		return fmt.Errorf("begin one-time command buffer: %w", vulkan.Error(res))
+	}
+	fn(cb)
+	if res := vulkan.EndCommandBuffer(cb); res != vulkan.Success {
+		return fmt.Errorf("end one-time command buffer: %w", vulkan.Error(res))
+	}
+	submitInfo := vulkan.SubmitInfo{
+		SType:              vulkan.StructureTypeSubmitInfo,
+		CommandBufferCount: 1,
+		PCommandBuffers:    []vulkan.CommandBuffer{cb},
+	}
+	if res := vulkan.QueueSubmit(a.graphicsQueue, 1, []vulkan.SubmitInfo{submitInfo}, vulkan.Fence(vulkan.NullHandle)); res != vulkan.Success {
+		vulkan.FreeCommandBuffers(a.device, a.commandPool, 1, []vulkan.CommandBuffer{cb})
+		return fmt.Errorf("submit one-time command buffer: %w", vulkan.Error(res))
+	}
+	vulkan.QueueWaitIdle(a.graphicsQueue)
+	vulkan.FreeCommandBuffers(a.device, a.commandPool, 1, []vulkan.CommandBuffer{cb})
+	return nil
+}
+
+func (a *VulkanApp) debugClearSwapchainImage(imageIndex uint32) error {
+	return a.oneTimeCommands(func(cb vulkan.CommandBuffer) {
+		subresource := vulkan.ImageSubresourceRange{
+			AspectMask:     vulkan.ImageAspectFlags(vulkan.ImageAspectColorBit),
+			BaseMipLevel:   0,
+			LevelCount:     1,
+			BaseArrayLayer: 0,
+			LayerCount:     1,
+		}
+		barrierToTransfer := vulkan.ImageMemoryBarrier{
+			SType:               vulkan.StructureTypeImageMemoryBarrier,
+			OldLayout:           vulkan.ImageLayoutPresentSrc,
+			NewLayout:           vulkan.ImageLayoutTransferDstOptimal,
+			SrcQueueFamilyIndex: vulkan.QueueFamilyIgnored,
+			DstQueueFamilyIndex: vulkan.QueueFamilyIgnored,
+			Image:               a.swapchainImages[imageIndex],
+			SubresourceRange:    subresource,
+			SrcAccessMask:       0,
+			DstAccessMask:       vulkan.AccessFlags(vulkan.AccessTransferWriteBit),
+		}
+		vulkan.CmdPipelineBarrier(
+			cb,
+			vulkan.PipelineStageFlags(vulkan.PipelineStageBottomOfPipeBit),
+			vulkan.PipelineStageFlags(vulkan.PipelineStageTransferBit),
+			0,
+			0, nil,
+			0, nil,
+			1, []vulkan.ImageMemoryBarrier{barrierToTransfer},
+		)
+
+		color := vulkan.ClearColorValue{}
+		floats := (*[4]float32)(unsafe.Pointer(&color))
+		floats[0] = 1.0
+		floats[1] = 0.0
+		floats[2] = 1.0
+		floats[3] = 1.0
+		vulkan.CmdClearColorImage(
+			cb,
+			a.swapchainImages[imageIndex],
+			vulkan.ImageLayoutTransferDstOptimal,
+			&color,
+			1,
+			[]vulkan.ImageSubresourceRange{subresource},
+		)
+
+		barrierToColor := vulkan.ImageMemoryBarrier{
+			SType:               vulkan.StructureTypeImageMemoryBarrier,
+			OldLayout:           vulkan.ImageLayoutTransferDstOptimal,
+			NewLayout:           vulkan.ImageLayoutColorAttachmentOptimal,
+			SrcQueueFamilyIndex: vulkan.QueueFamilyIgnored,
+			DstQueueFamilyIndex: vulkan.QueueFamilyIgnored,
+			Image:               a.swapchainImages[imageIndex],
+			SubresourceRange:    subresource,
+			SrcAccessMask:       vulkan.AccessFlags(vulkan.AccessTransferWriteBit),
+			DstAccessMask:       vulkan.AccessFlags(vulkan.AccessColorAttachmentWriteBit),
+		}
+		vulkan.CmdPipelineBarrier(
+			cb,
+			vulkan.PipelineStageFlags(vulkan.PipelineStageTransferBit),
+			vulkan.PipelineStageFlags(vulkan.PipelineStageColorAttachmentOutputBit),
+			0,
+			0, nil,
+			0, nil,
+			1, []vulkan.ImageMemoryBarrier{barrierToColor},
+		)
+	})
 }
 
 func (a *VulkanApp) cleanupSwapchain() {
@@ -1326,7 +2030,7 @@ func (a *VulkanApp) recordCommandBuffer(cb vulkan.CommandBuffer, imageIndex int)
 		return fmt.Errorf("begin command buffer: %w", vulkan.Error(res))
 	}
 
-	clearColor := vulkan.NewClearValue([]float32{0.05, 0.05, 0.08, 1.0})
+	clearColor := vulkan.NewClearValue([]float32{0.05, 0.05, 0.1, 1.0})
 	clearDepth := vulkan.NewClearDepthStencil(1.0, 0)
 	clearValues := []vulkan.ClearValue{clearColor, clearDepth}
 
@@ -1362,6 +2066,9 @@ func (a *VulkanApp) recordCommandBuffer(cb vulkan.CommandBuffer, imageIndex int)
 
 func (a *VulkanApp) DrawFrame() error {
 	frame := a.currentFrame % maxFramesInFlight
+	if a.debugFrames == 0 {
+		log.Printf("DrawFrame start (frame %d)", frame)
+	}
 	vulkan.WaitForFences(a.device, 1, []vulkan.Fence{a.inFlightFences[frame]}, vulkan.True, vulkan.MaxUint64)
 
 	if a.framebufferResized {
@@ -1427,6 +2134,11 @@ func (a *VulkanApp) DrawFrame() error {
 		return fmt.Errorf("queue present: %w", vulkan.Error(res))
 	}
 
+	if a.debugFrames < 5 {
+		log.Printf("frame %d presented (image %d, res=%v)", a.debugFrames, imageIndex, res)
+	}
+	a.debugFrames++
+
 	a.currentFrame = (a.currentFrame + 1) % maxFramesInFlight
 	return nil
 }
@@ -1444,6 +2156,18 @@ func (a *VulkanApp) Cleanup() {
 
 	if a.commandPool != vulkan.CommandPool(vulkan.NullHandle) {
 		vulkan.DestroyCommandPool(a.device, a.commandPool, nil)
+	}
+	if a.textureSampler != vulkan.Sampler(vulkan.NullHandle) {
+		vulkan.DestroySampler(a.device, a.textureSampler, nil)
+	}
+	if a.textureImageView != vulkan.ImageView(vulkan.NullHandle) {
+		vulkan.DestroyImageView(a.device, a.textureImageView, nil)
+	}
+	if a.textureImage != vulkan.Image(vulkan.NullHandle) {
+		vulkan.DestroyImage(a.device, a.textureImage, nil)
+	}
+	if a.textureImageMemory != vulkan.DeviceMemory(vulkan.NullHandle) {
+		vulkan.FreeMemory(a.device, a.textureImageMemory, nil)
 	}
 	if a.vertexBuffer != vulkan.Buffer(vulkan.NullHandle) {
 		vulkan.DestroyBuffer(a.device, a.vertexBuffer, nil)

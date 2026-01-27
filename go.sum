@@ -2,5 +2,3 @@ github.com/go-gl/mathgl v1.2.0 h1:v2eOj/y1B2afDxF6URV1qCYmo1KW08lAMtTbOn3KXCY=
 github.com/go-gl/mathgl v1.2.0/go.mod h1:pf9+b5J3LFP7iZ4XXaVzZrCle0Q/vNpB/vDe5+3ulRE=
 github.com/vulkan-go/glfw v0.0.0-20210402172934-58379a80228d h1:ATkYUewjackCJzqJMjknP3Swp9aNj18A8P/eqSW19qQ=
 github.com/vulkan-go/glfw v0.0.0-20210402172934-58379a80228d/go.mod h1:ZV+uQh1Pj/hAEWFAdC0ezZ8ws/ZSwroFi92meX6wwws=
-github.com/vulkan-go/vulkan v0.0.0-20221209234627-c0a353ae26c8 h1:qPHDyQTLtn40kezY6y4UL7bH7Z0Im9wSu1tQtM2wbUU=
-github.com/vulkan-go/vulkan v0.0.0-20221209234627-c0a353ae26c8/go.mod h1:Y5Ti1uUBdKDsb0W8aPtIo9krs+29Y7p6Bc9yyy4AM6g=

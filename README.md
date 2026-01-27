@@ -39,3 +39,6 @@ Windows:
 - If `vulkaninfo` fails, check driver install and `VK_ICD_FILENAMES`. If validation fails to load, check `VK_LAYER_PATH`.
 
 These checks ensure the system can create instances, load validation layers, and present surfaces before we wire up the Go application.
+
+## Local patches
+- `github.com/vulkan-go/vulkan` is vendored in `third_party/vulkan` with a small patch that copies Go strings into C memory for all Vulkan calls. This avoids cgo pointer checks when creating instances/devices on Go 1.24+ toolchains.
