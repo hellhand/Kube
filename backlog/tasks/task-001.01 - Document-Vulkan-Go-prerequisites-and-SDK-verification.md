@@ -1,7 +1,7 @@
 ---
 id: TASK-001.01
 title: Document Vulkan/Go prerequisites and SDK verification
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-01-27 16:40'
 labels: []
@@ -17,7 +17,7 @@ Capture OS-specific Vulkan SDK setup, Go toolchain versions, required headers/li
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 README documents Vulkan SDK install/driver requirements and Go version.
-- [ ] #2 Verification command (e.g., vulkaninfo or vkcube) documented with expected success output.
-- [ ] #3 Notes on enabling validation layers (layer path/ICD env vars) recorded.
+- [x] #1 README documents Vulkan SDK install/driver requirements and Go version.
+- [x] #2 Verification command (e.g., vulkaninfo or vkcube) documented with expected success output.
+- [x] #3 Notes on enabling validation layers (layer path/ICD env vars) recorded.
 <!-- AC:END -->
