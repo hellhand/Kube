@@ -12,11 +12,11 @@ html lang="en">
     <p class="lead">Create a Vulkan instance that requests validation (if available) and logs validation output.</p>
   </header>
   <section>
-    <div class="badge">Steps</div>
+    <div class="badge">Steps with code</div>
     <ol>
-      <li>Get required extensions from GLFW: <code>glfw.GetRequiredInstanceExtensions()</code>.</li>
-      <li>Prepare layer list: <code>{"VK_LAYER_KHRONOS_validation"}</code>; if unavailable, log and disable validation.</li>
-      <li>Create instance:
+      <li>Get required extensions from GLFW: <code>exts := glfw.GetRequiredInstanceExtensions()</code>.</li>
+      <li>Prepare layers: <code>validationLayers := []string{"VK_LAYER_KHRONOS_validation"}</code>; if unavailable, set to empty.</li>
+      <li>Create instance (C-allocated strings to avoid Go-pointer issues):
 <pre><code class="language-go">appName := makeCString("Kube Vulkan")
 engineName := makeCString("No Engine")
 defer C.free(unsafe.Pointer(appName.cptr))
@@ -37,10 +37,12 @@ createInfo := vulkan.InstanceCreateInfo{
   EnabledLayerCount:       uint32(len(validationLayers)),
   PpEnabledLayerNames:     validationLayers,
 }
-</code></pre>
+if res := vulkan.CreateInstance(&createInfo, nil, &a.instance); res != vulkan.Success {
+  return fmt.Errorf("create instance: %w", vulkan.Error(res))
+}</code></pre>
       </li>
-      <li>Install debug messenger (if validation on) to print warnings/errors.</li>
-      <li>Call <code>vulkan.InitInstance(instance)</code> once created.</li>
+      <li>Install debug messenger if validation is on, pointing to a callback that logs severity/message.</li>
+      <li>Call <code>vulkan.InitInstance(a.instance)</code> to load instance-level function pointers.</li>
     </ol>
   </section>
   <div class="nav"><a href="index.html">← Back to Hub</a> <a href="step-002-02-surface-device.html">Next →</a></div>

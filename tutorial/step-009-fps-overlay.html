@@ -43,6 +43,20 @@ void main() { outColor = vec4(fragColor, 1.0); }
       <li>For text like “FPS: 60.0”, expand chars into quads in pixel space, then convert to NDC.</li>
       <li>Write vertices into a host-visible overlay vertex buffer; record a single indirect draw using an overlay indirect buffer.</li>
     </ul>
+<pre><code class="language-go">verts := a.buildOverlayVertices(fmt.Sprintf("FPS: %.1f", a.fpsValue))
+size := vulkan.DeviceSize(len(verts)) * vulkan.DeviceSize(unsafe.Sizeof(overlayVertex{}))
+vulkan.MapMemory(a.device, a.overlayVertexBufferMemory, 0, size, 0, &data)
+dst := (*[1<<30]byte)(data)[:size:size]
+src := (*[1<<30]byte)(unsafe.Pointer(&verts[0]))[:size:size]
+copy(dst, src)
+vulkan.UnmapMemory(a.device, a.overlayVertexBufferMemory)
+
+draw := vulkan.DrawIndirectCommand{
+  VertexCount:   uint32(len(verts)),
+  InstanceCount: 1,
+}
+// write draw into overlayIndirectMemory, then vkCmdDrawIndirect(cb, overlayIndirectBuffer, 0, 1, sizeof(draw))
+</code></pre>
   </section>
   <section>
     <h2>FPS calculation</h2>

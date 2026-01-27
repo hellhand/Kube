@@ -28,6 +28,16 @@ var cubeIndices  = []uint32{ /* 36 indices, 6 faces */ }</code></pre>
       <li>Create host-visible, coherent buffers for vertices and indices (usage: vertex/index).</li>
       <li>Map, copy the data, unmap.</li>
     </ul>
+<pre><code class="language-go">vbSize := vulkan.DeviceSize(len(cubeVertices)) * vulkan.DeviceSize(unsafe.Sizeof(vertex{}))
+buf, mem, _ := a.createBuffer(vbSize,
+  vulkan.BufferUsageFlags(vulkan.BufferUsageVertexBufferBit),
+  vulkan.MemoryPropertyHostVisibleBit|vulkan.MemoryPropertyHostCoherentBit)
+var data unsafe.Pointer
+vulkan.MapMemory(a.device, mem, 0, vbSize, 0, &data)
+dst := (*[1<<30]byte)(data)[:vbSize:vbSize]
+copy(dst, verticesToBytes(cubeVertices))
+vulkan.UnmapMemory(a.device, mem)
+a.vertexBuffer, a.vertexBufferMemory = buf, mem</code></pre>
   </section>
   <section>
     <h2>3) Uniform buffers</h2>
@@ -48,6 +58,33 @@ var cubeIndices  = []uint32{ /* 36 indices, 6 faces */ }</code></pre>
       <li>Allocate one descriptor set per swapchain image from a pool sized for UBO + sampler counts.</li>
       <li>Write descriptors: buffer info for binding 0, image info (sampler/view, layout SHADER_READ_ONLY_OPTIMAL) for binding 1.</li>
     </ul>
+<pre><code class="language-go">bufferInfo := vulkan.DescriptorBufferInfo{
+  Buffer: a.uniformBuffers[i],
+  Offset: 0,
+  Range:  vulkan.DeviceSize(unsafe.Sizeof(uniformBufferObject{})),
+}
+imageInfo := vulkan.DescriptorImageInfo{
+  Sampler:     a.textureSampler,
+  ImageView:   a.textureImageView,
+  ImageLayout: vulkan.ImageLayoutShaderReadOnlyOptimal,
+}
+writeUBO := vulkan.WriteDescriptorSet{
+  SType: vulkan.StructureTypeWriteDescriptorSet,
+  DstSet: a.descriptorSets[i],
+  DstBinding: 0,
+  DescriptorType: vulkan.DescriptorTypeUniformBuffer,
+  DescriptorCount: 1,
+  PBufferInfo: []vulkan.DescriptorBufferInfo{bufferInfo},
+}
+writeSampler := vulkan.WriteDescriptorSet{
+  SType: vulkan.StructureTypeWriteDescriptorSet,
+  DstSet: a.descriptorSets[i],
+  DstBinding: 1,
+  DescriptorType: vulkan.DescriptorTypeCombinedImageSampler,
+  DescriptorCount: 1,
+  PImageInfo: []vulkan.DescriptorImageInfo{imageInfo},
+}
+vulkan.UpdateDescriptorSets(a.device, 2, []vulkan.WriteDescriptorSet{writeUBO, writeSampler}, 0, nil)</code></pre>
   </section>
   <div class="nav"><a href="index.html">← Back to Hub</a> <a href="step-005-milestone-render-loop.html">Next →</a></div>
 </main>

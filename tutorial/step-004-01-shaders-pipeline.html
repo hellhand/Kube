@@ -61,6 +61,18 @@ glslc shaders/cube.frag -o shaders/frag.spv</code></pre>
       <li>Create pipeline layout referencing descriptor set layout.</li>
       <li>Create graphics pipeline; destroy shader modules afterwards.</li>
     </ul>
+<pre><code class="language-go">mainName := "main\x00"
+stages := []vulkan.PipelineShaderStageCreateInfo{
+  {SType: vulkan.StructureTypePipelineShaderStageCreateInfo, Stage: vulkan.ShaderStageVertexBit, Module: vertModule, PName: mainName},
+  {SType: vulkan.StructureTypePipelineShaderStageCreateInfo, Stage: vulkan.ShaderStageFragmentBit, Module: fragModule, PName: mainName},
+}
+layoutInfo := vulkan.PipelineLayoutCreateInfo{
+  SType:          vulkan.StructureTypePipelineLayoutCreateInfo,
+  SetLayoutCount: 1,
+  PSetLayouts:    []vulkan.DescriptorSetLayout{a.descriptorSetLayout},
+}
+// Create pipeline layout, then GraphicsPipelineCreateInfo with vertex/raster/depth/blend/viewport states, render pass, subpass=0.
+</code></pre>
   </section>
   <div class="nav"><a href="index.html">← Back to Hub</a> <a href="step-004-02-buffers-descriptors.html">Next →</a></div>
 </main>

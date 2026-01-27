@@ -28,6 +28,10 @@
       <li>Ensure cleanup/recreation paths still destroy/free resources correctly.</li>
       <li>Run <code>go build ./...</code> after refactor to verify no behavior changes.</li>
     </ul>
+<pre><code class="language-bash"># Example split already present:
+vk_app.go       # core orchestration, draw loop, cleanup
+vk_texture.go   # texture loading, image/view/sampler
+vk_overlay.go   # HUD pipeline, buffers, FPS text</code></pre>
   </section>
   <div class="nav"><a href="index.html">← Back to Hub</a></div>
 </main>

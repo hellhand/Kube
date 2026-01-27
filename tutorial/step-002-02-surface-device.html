@@ -17,6 +17,11 @@
       <li>Use GLFW to create the Vulkan surface bound to the window.</li>
       <li>Store the surface handle for later swapchain creation.</li>
     </ul>
+<pre><code class="language-go">var surface vulkan.Surface
+if err := glfw.CreateWindowSurface(a.instance, a.window, nil, &surface); err != nil {
+  return fmt.Errorf("create surface: %w", err)
+}
+a.surface = surface</code></pre>
   </section>
   <section>
     <h2>2) Pick physical device</h2>
@@ -26,6 +31,14 @@
       <li>Check swapchain support: at least one format and one present mode.</li>
       <li>Prefer discrete GPU if multiple devices qualify.</li>
     </ul>
+<pre><code class="language-go">devices := vulkan.PhysicalDeviceSlice(count)
+vulkan.EnumeratePhysicalDevices(a.instance, &count, devices)
+for _, dev := range devices {
+  if supportsQueues(dev, a.surface) && supportsSwapchain(dev) {
+    a.physicalDevice = dev
+    break
+  }
+}</code></pre>
   </section>
   <section>
     <h2>3) Create logical device</h2>
@@ -34,6 +47,25 @@
       <li>Enable device extension <code>VK_KHR_swapchain</code>; no extra layers needed on device.</li>
       <li>Call <code>vulkan.CreateDevice</code>, then <code>vulkan.GetDeviceQueue</code> for graphics and present queues; store them.</li>
     </ul>
+<pre><code class="language-go">extensions := []string{"VK_KHR_swapchain"}
+qInfos := []vulkan.DeviceQueueCreateInfo{{
+  SType:            vulkan.StructureTypeDeviceQueueCreateInfo,
+  QueueFamilyIndex: graphicsIndex,
+  QueueCount:       1,
+  PQueuePriorities: []float32{1.0},
+}}
+createInfo := vulkan.DeviceCreateInfo{
+  SType:                   vulkan.StructureTypeDeviceCreateInfo,
+  QueueCreateInfoCount:    uint32(len(qInfos)),
+  PQueueCreateInfos:       qInfos,
+  EnabledExtensionCount:   uint32(len(extensions)),
+  PpEnabledExtensionNames: extensions,
+}
+if res := vulkan.CreateDevice(a.physicalDevice, &createInfo, nil, &a.device); res != vulkan.Success {
+  return fmt.Errorf("create device: %w", vulkan.Error(res))
+}
+vulkan.GetDeviceQueue(a.device, graphicsIndex, 0, &a.graphicsQueue)
+vulkan.GetDeviceQueue(a.device, presentIndex, 0, &a.presentQueue)</code></pre>
   </section>
   <div class="nav"><a href="index.html">← Back to Hub</a> <a href="step-003-milestone-swapchain.html">Next →</a></div>
 </main>

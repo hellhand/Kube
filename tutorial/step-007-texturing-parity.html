@@ -28,6 +28,21 @@ var lunargPPM []byte
       <li>Transitions: UNDEFINED → TRANSFER_DST → SHADER_READ_ONLY_OPTIMAL.</li>
       <li>Copy staging buffer to image; create image view (color aspect) and sampler (linear, repeat).</li>
     </ul>
+<pre><code class="language-go">texW, texH, pixels, _ := loadVkcubeTexture()
+stageBuf, stageMem, _ := a.createBuffer(vulkan.DeviceSize(len(pixels)),
+  vulkan.BufferUsageFlags(vulkan.BufferUsageTransferSrcBit),
+  vulkan.MemoryPropertyHostVisibleBit|vulkan.MemoryPropertyHostCoherentBit)
+// map/copy pixels then unmap
+image, memory, _ := a.createImage(texW, texH, vulkan.FormatR8g8b8a8Srgb,
+  vulkan.ImageTilingOptimal,
+  vulkan.ImageUsageFlags(vulkan.ImageUsageTransferDstBit|vulkan.ImageUsageSampledBit),
+  vulkan.MemoryPropertyDeviceLocalBit)
+a.transitionImageLayout(image, vulkan.FormatR8g8b8a8Srgb, vulkan.ImageLayoutUndefined, vulkan.ImageLayoutTransferDstOptimal)
+a.copyBufferToImage(stageBuf, image, texW, texH)
+a.transitionImageLayout(image, vulkan.FormatR8g8b8a8Srgb, vulkan.ImageLayoutTransferDstOptimal, vulkan.ImageLayoutShaderReadOnlyOptimal)
+a.textureImage = image
+a.textureImageMemory = memory
+</code></pre>
   </section>
   <section>
     <h2>3) Vertex layout & UVs</h2>

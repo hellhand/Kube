@@ -29,6 +29,21 @@
       <li>Allocate command buffers.</li>
       <li>Reset images-in-flight array; clear resize flag.</li>
     </ol>
+<pre><code class="language-go">vulkan.DeviceWaitIdle(a.device)
+a.cleanupSwapchain()
+if err := a.createSwapchain(); err != nil { return err }
+if err := a.createImageViews(); err != nil { return err }
+if err := a.createDepthResources(); err != nil { return err }
+if err := a.createRenderPass(); err != nil { return err }
+if err := a.createGraphicsPipeline(); err != nil { return err }
+if err := a.createOverlayPipeline(); err != nil { return err }
+if err := a.createFramebuffers(); err != nil { return err }
+if err := a.createUniformBuffers(); err != nil { return err }
+if err := a.createDescriptorPool(); err != nil { return err }
+if err := a.createDescriptorSets(); err != nil { return err }
+if err := a.allocateCommandBuffers(); err != nil { return err }
+a.imagesInFlight = make([]vulkan.Fence, len(a.swapchainImages))
+a.framebufferResized = false</code></pre>
   </section>
   <div class="nav"><a href="index.html">← Back to Hub</a> <a href="step-006-milestone-packaging.html">Next →</a></div>
 </main>

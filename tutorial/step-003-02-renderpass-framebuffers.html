@@ -17,12 +17,44 @@
       <li>Attachments: color (swapchain format, layout PRESENT at end), depth (depth format, layout DEPTH_STENCIL_ATTACHMENT_OPTIMAL).</li>
       <li>Subpass: references color + depth attachments.</li>
     </ul>
+<pre><code class="language-go">colorAttachment := vulkan.AttachmentDescription{
+  Format:         a.swapchainFormat,
+  Samples:        vulkan.SampleCount1Bit,
+  LoadOp:         vulkan.AttachmentLoadOpClear,
+  StoreOp:        vulkan.AttachmentStoreOpStore,
+  InitialLayout:  vulkan.ImageLayoutUndefined,
+  FinalLayout:    vulkan.ImageLayoutPresentSrc,
+}
+depthAttachment := vulkan.AttachmentDescription{
+  Format:        a.depthFormat,
+  Samples:       vulkan.SampleCount1Bit,
+  LoadOp:        vulkan.AttachmentLoadOpClear,
+  StoreOp:       vulkan.AttachmentStoreOpDontCare,
+  InitialLayout: vulkan.ImageLayoutUndefined,
+  FinalLayout:   vulkan.ImageLayoutDepthStencilAttachmentOptimal,
+}
+// Define subpass and create render pass with both attachments.</code></pre>
   </section>
   <section>
     <h2>2) Framebuffers</h2>
     <ul>
       <li>One framebuffer per swapchain image view plus the depth view.</li>
     </ul>
+<pre><code class="language-go">for i := range a.swapchainViews {
+  attachments := []vulkan.ImageView{a.swapchainViews[i], a.depthImageView}
+  fbInfo := vulkan.FramebufferCreateInfo{
+    SType:           vulkan.StructureTypeFramebufferCreateInfo,
+    RenderPass:      a.renderPass,
+    AttachmentCount: uint32(len(attachments)),
+    PAttachments:    attachments,
+    Width:           a.swapchainExtent.Width,
+    Height:          a.swapchainExtent.Height,
+    Layers:          1,
+  }
+  fb := vulkan.Framebuffer(vulkan.NullHandle)
+  vulkan.CreateFramebuffer(a.device, &fbInfo, nil, &fb)
+  a.framebuffers = append(a.framebuffers, fb)
+}</code></pre>
   </section>
   <section>
     <h2>3) Command pool/buffers</h2>
@@ -37,6 +69,12 @@
       <li>Per-frame: imageAvailable semaphore, renderFinished semaphore, inFlight fence (start signaled).</li>
       <li>Track images-in-flight fences to avoid double-submitting the same image.</li>
     </ul>
+<pre><code class="language-go">semInfo := vulkan.SemaphoreCreateInfo{SType: vulkan.StructureTypeSemaphoreCreateInfo}
+fenceInfo := vulkan.FenceCreateInfo{
+  SType: vulkan.StructureTypeFenceCreateInfo,
+  Flags: vulkan.FenceCreateFlags(vulkan.FenceCreateSignaledBit),
+}
+// create per-frame semaphores/fences here</code></pre>
   </section>
   <section>
     <h2>5) Clear loop</h2>
@@ -45,6 +83,11 @@
       <li>Record command buffer: begin render pass, clear color/depth, end render pass.</li>
       <li>Submit (wait imageAvailable, signal renderFinished), present (wait renderFinished).</li>
     </ol>
+<pre><code class="language-go">clearColor := vulkan.NewClearValue([]float32{0.05, 0.05, 0.05, 1.0})
+clearDepth := vulkan.NewClearDepthStencil(1.0, 0)
+rpInfo := vulkan.RenderPassBeginInfo{ /* assign framebuffer, area, clears */ }
+// Record CB: BeginRenderPass -> (later bind pipeline/draw) -> EndRenderPass
+</code></pre>
   </section>
   <div class="nav"><a href="index.html">← Back to Hub</a> <a href="step-004-milestone-pipeline.html">Next →</a></div>
 </main>
