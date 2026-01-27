@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Task 010 – Split vk_app into Modules</title>
+  <link rel="stylesheet" href="shared.css">
+</head>
+<body>
+<main>
+  <header>
+    <h1>Task 010 – Split vk_app into Modules</h1>
+    <p class="lead">Refactor the monolithic app into focused files while keeping behavior identical.</p>
+  </header>
+  <section>
+    <div class="badge">Suggested split</div>
+    <ul>
+      <li><code>vk_app.go</code>: core types, init orchestration, draw loop, cleanup.</li>
+      <li><code>vk_texture.go</code>: texture loading/parsing (PPM), image/view/sampler creation.</li>
+      <li><code>vk_overlay.go</code>: overlay pipeline, buffers, FPS generation/draw.</li>
+      <li>(Optional) further splits: swapchain/render-pass/pipeline setup vs. buffer/descriptor creation vs. commands/recording.</li>
+    </ul>
+  </section>
+  <section>
+    <h2>Guidelines</h2>
+    <ul>
+      <li>Keep package <code>main</code> for all files; avoid circular deps.</li>
+      <li>Minimize imports per file; move helpers near their usage.</li>
+      <li>Ensure cleanup/recreation paths still destroy/free resources correctly.</li>
+      <li>Run <code>go build ./...</code> after refactor to verify no behavior changes.</li>
+    </ul>
+  </section>
+  <div class="nav"><a href="index.html">← Back to Hub</a></div>
+</main>
+</body>
+</html>

@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Task 005.02 – Resize-Safe Swapchain/Pipeline Recreation</title>
+  <link rel="stylesheet" href="shared.css">
+</head>
+<body>
+<main>
+  <header>
+    <h1>Task 005.02 – Resize & Out-of-Date Handling</h1>
+    <p class="lead">Rebuild swapchain-dependent resources safely on resize or out-of-date events.</p>
+  </header>
+  <section>
+    <h2>When to recreate</h2>
+    <ul>
+      <li>Framebuffer resize callback sets a flag.</li>
+      <li><code>AcquireNextImage</code> returns <code>OUT_OF_DATE</code> or <code>SUBOPTIMAL</code>.</li>
+    </ul>
+  </section>
+  <section>
+    <h2>Recreation steps</h2>
+    <ol>
+      <li><strong>DeviceWaitIdle</strong>.</li>
+      <li>Destroy/Free: command buffers, framebuffers, render pass, pipelines, descriptor pool/sets, depth resources, swapchain views, swapchain.</li>
+      <li>Create swapchain, views, depth.</li>
+      <li>Create render pass, pipelines, framebuffers.</li>
+      <li>Create uniform buffers, descriptor pool/sets.</li>
+      <li>Allocate command buffers.</li>
+      <li>Reset images-in-flight array; clear resize flag.</li>
+    </ol>
+  </section>
+  <div class="nav"><a href="index.html">← Back to Hub</a> <a href="step-006-milestone-packaging.html">Next →</a></div>
+</main>
+</body>
+</html>

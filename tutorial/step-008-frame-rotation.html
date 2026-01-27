@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Task 008 – Frame-Based Rotation Control</title>
+  <link rel="stylesheet" href="shared.css">
+</head>
+<body>
+<main>
+  <header>
+    <h1>Task 008 – Frame-Based Rotation</h1>
+    <p class="lead">Use a frame counter for deterministic rotation; pause/resume with SPACE.</p>
+  </header>
+  <section>
+    <h2>Approach</h2>
+    <ul>
+      <li>Maintain a frame counter (e.g., <code>debugFrames</code>), increment only when not paused.</li>
+      <li>Angle = frameCount * degreesPerFrame (e.g., 0.75° per frame → 45°/s at 60 fps).</li>
+      <li>Use in <code>updateUniformBuffer</code> to build the model matrix.</li>
+      <li>SPACE toggles pause: do not increment frame counter when paused, so orientation holds.</li>
+    </ul>
+  </section>
+  <section>
+    <h2>Example snippet</h2>
+<pre><code class="language-go">elapsed := float32(a.debugFrames)
+degPerFrame := 45.0 / 60.0
+spinZ := elapsed * mgl32.DegToRad(float32(degPerFrame))
+model := mgl32.HomogRotate3D(spinZ, mgl32.Vec3{0,0,1})
+// increment debugFrames only if !paused
+</code></pre>
+  </section>
+  <div class="nav"><a href="index.html">← Back to Hub</a> <a href="step-009-fps-overlay.html">Next →</a></div>
+</main>
+</body>
+</html>

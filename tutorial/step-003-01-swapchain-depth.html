@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Task 003.01 – Swapchain, Views, Depth Buffer</title>
+  <link rel="stylesheet" href="shared.css">
+</head>
+<body>
+<main>
+  <header>
+    <h1>Task 003.01 – Swapchain, Views, Depth Buffer</h1>
+    <p class="lead">Build the swapchain, create color views, and add a depth image/view.</p>
+  </header>
+  <section>
+    <h2>1) Choose swapchain settings</h2>
+    <ul>
+      <li>Surface format: prefer SRGB (e.g., <code>B8G8R8A8_SRGB</code>).</li>
+      <li>Present mode: FIFO (always available).</li>
+      <li>Extent: clamp to surface caps; if current extent is 0, wait until framebuffer has size.</li>
+      <li>Image count: min+1, capped by max image count if provided.</li>
+    </ul>
+  </section>
+  <section>
+    <h2>2) Create swapchain & image views</h2>
+    <ul>
+      <li>Create the swapchain with sharing mode (exclusive unless graphics/present differ).</li>
+      <li>Fetch images via <code>GetSwapchainImages</code> and create <code>VkImageView</code> for each with color aspect.</li>
+    </ul>
+  </section>
+  <section>
+    <h2>3) Depth resources</h2>
+    <ul>
+      <li>Pick a depth format (e.g., D32_SFLOAT) supported with optimal tiling and depth-stencil feature.</li>
+      <li>Create an image (width=extent.W, height=extent.H, 1 mip, 1 layer, optimal tiling, usage DEPTH_STENCIL_ATTACHMENT).</li>
+      <li>Allocate device-local memory, bind, and create a depth view (aspect depth).</li>
+    </ul>
+  </section>
+  <div class="nav"><a href="index.html">← Back to Hub</a> <a href="step-003-02-renderpass-framebuffers.html">Next →</a></div>
+</main>
+</body>
+</html>

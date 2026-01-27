@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Task 004 – Graphics Pipeline Milestone</title>
+  <link rel="stylesheet" href="shared.css">
+</head>
+<body>
+<main>
+  <header>
+    <h1>Task 004 – Graphics Pipeline & Resources</h1>
+    <p class="lead">Compile shaders, define descriptor layout, and build a pipeline ready to draw the cube.</p>
+  </header>
+  <section>
+    <div class="badge">Milestone goal</div>
+    <p>Have SPIR-V shaders, descriptor set layout, pipeline layout, and a graphics pipeline bound to the swapchain render pass.</p>
+  </section>
+  <section>
+    <h2>Key steps</h2>
+    <ul>
+      <li>Write GLSL for vertex/fragment; compile with <code>glslc</code> to SPIR-V.</li>
+      <li>Descriptor set layout: binding 0 (UBO), binding 1 (combined image sampler).</li>
+      <li>Pipeline state: vertex input (pos/color/uv), triangle list, viewport/scissor = swapchain extent, cull OFF, depth ON, blend OFF.</li>
+    </ul>
+  </section>
+  <div class="nav"><a href="index.html">← Back to Hub</a> <a href="step-004-01-shaders-pipeline.html">Next →</a></div>
+</main>
+</body>
+</html>

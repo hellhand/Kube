@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Task 003 – Swapchain & Frame Scheduling Milestone</title>
+  <link rel="stylesheet" href="shared.css">
+</head>
+<body>
+<main>
+  <header>
+    <h1>Task 003 – Swapchain & Frame Scheduling</h1>
+    <p class="lead">Create the swapchain, views, depth buffer, render pass, framebuffers, command buffers, and per-frame sync.</p>
+  </header>
+  <section>
+    <div class="badge">Milestone goal</div>
+    <p>Render a clear-color loop that acquires, draws, and presents without validation errors.</p>
+  </section>
+  <section>
+    <h2>Key steps</h2>
+    <ul>
+      <li>Swapchain creation (formats, present mode, extent) with graceful handling of zero extent.</li>
+      <li>Image views for each swapchain image.</li>
+      <li>Depth image/view (device-local memory).</li>
+      <li>Render pass with color + depth attachments.</li>
+      <li>Framebuffers per swapchain image.</li>
+      <li>Command pool and primary command buffers.</li>
+      <li>Per-frame semaphores and fences for acquire/submit/present.</li>
+    </ul>
+  </section>
+  <div class="nav"><a href="index.html">← Back to Hub</a> <a href="step-003-01-swapchain-depth.html">Next →</a></div>
+</main>
+</body>
+</html>

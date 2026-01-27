@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Task 001 – Prerequisites & Environment</title>
+  <link rel="stylesheet" href="shared.css">
+</head>
+<body>
+<main>
+  <header>
+    <h1>Task 001 – Vulkan Go Setup & Prerequisites</h1>
+    <p class="lead">Install tools, verify drivers, and prepare your system for Vulkan + Go.</p>
+  </header>
+  <section>
+    <div class="badge">What to do</div>
+    <ul>
+      <li>Install Go 1.24+ (<code>go version</code>).</li>
+      <li>Install Vulkan loader/driver + dev headers (via SDK or distro packages).</li>
+      <li>Install X11/GLFW dev packages so GLFW can build (e.g., libx11-dev, libglfw3-dev on Debian/Ubuntu).</li>
+      <li>Install <code>glslc</code> (from the Vulkan SDK) to compile shaders.</li>
+    </ul>
+  </section>
+  <section>
+    <h2>Verify Vulkan runtime</h2>
+<pre><code>vulkaninfo | head
+glslc --version
+go version</code></pre>
+    <p>If <code>vulkaninfo</code> fails, install or fix the GPU driver/ICD first.</p>
+  </section>
+  <section>
+    <h2>Validation layers</h2>
+    <ul>
+      <li>If the SDK is installed, validation layers are usually in place. If missing, you can run with <code>VK_VALIDATION=0</code> to skip them.</li>
+      <li>Environment hints (if needed): <code>VK_LAYER_PATH</code> to point to layer JSON, <code>VK_ICD_FILENAMES</code> for ICD JSON.</li>
+    </ul>
+  </section>
+  <section>
+    <h2>Why this matters</h2>
+    <p>All later steps assume Vulkan initializes cleanly and shaders can be compiled. Fixing drivers early saves time.</p>
+  </section>
+  <div class="nav"><a href="index.html">← Back to Hub</a> <a href="step-001-01-prereq-docs.html">Next →</a></div>
+</main>
+</body>
+</html>

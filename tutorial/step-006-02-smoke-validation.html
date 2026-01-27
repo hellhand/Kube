@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Task 006.02 – Smoke Test & Validation Toggles</title>
+  <link rel="stylesheet" href="shared.css">
+</head>
+<body>
+<main>
+  <header>
+    <h1>Task 006.02 – Smoke Test & Validation Toggles</h1>
+    <p class="lead">Add a lightweight self-check and document validation/debug toggles.</p>
+  </header>
+  <section>
+    <h2>Smoke check ideas</h2>
+    <ul>
+      <li>A CLI flag or mode that initializes instance/device/swapchain, records a frame, and exits.</li>
+      <li>Run it in CI or locally to ensure the pipeline is healthy.</li>
+    </ul>
+  </section>
+  <section>
+    <h2>Validation toggles</h2>
+    <ul>
+      <li>Env: <code>VK_VALIDATION=0</code> to skip; default is to request validation if available.</li>
+      <li>Log selected GPU, swapchain format/mode, validation on/off at startup.</li>
+    </ul>
+  </section>
+  <div class="nav"><a href="index.html">← Back to Hub</a> <a href="step-007-texturing-parity.html">Next →</a></div>
+</main>
+</body>
+</html>

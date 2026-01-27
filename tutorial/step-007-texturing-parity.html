@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Task 007 – Texturing & vkcube Visual Parity</title>
+  <link rel="stylesheet" href="shared.css">
+</head>
+<body>
+<main>
+  <header>
+    <h1>Task 007 – Texturing & vkcube Visual Parity</h1>
+    <p class="lead">Use the classic vkcube texture, correct UVs, no culling, depth on, and a vkcube-style background.</p>
+  </header>
+  <section>
+    <h2>1) Embed texture</h2>
+<pre><code class="language-go">// texture_embed.go
+package main
+import _ "embed"
+//go:embed assets/lunarg.ppm
+var lunargPPM []byte
+</code></pre>
+  </section>
+  <section>
+    <h2>2) Load & create image (vk_texture.go)</h2>
+    <ul>
+      <li>Parse PPM into RGBA.</li>
+      <li>Create image R8G8B8A8 SRGB, usage TRANSFER_DST | SAMPLED, tiling OPTIMAL.</li>
+      <li>Transitions: UNDEFINED → TRANSFER_DST → SHADER_READ_ONLY_OPTIMAL.</li>
+      <li>Copy staging buffer to image; create image view (color aspect) and sampler (linear, repeat).</li>
+    </ul>
+  </section>
+  <section>
+    <h2>3) Vertex layout & UVs</h2>
+    <p>24 vertices (4 per face) with per-face UVs; 36 indices.</p>
+  </section>
+  <section>
+    <h2>4) Pipeline considerations</h2>
+    <ul>
+      <li>Descriptor set layout: binding 0 UBO, binding 1 combined image sampler.</li>
+      <li>Rasterizer: cull mode NONE (keep all faces visible); depth test/write ON.</li>
+      <li>Background clear: vkcube-style green (e.g., <code>{0.15, 0.35, 0.15, 1.0}</code>).</li>
+    </ul>
+  </section>
+  <section>
+    <h2>5) Controls</h2>
+    <ul>
+      <li>ESC closes window.</li>
+      <li>SPACE toggles rotation pause.</li>
+    </ul>
+  </section>
+  <div class="nav"><a href="index.html">← Back to Hub</a> <a href="step-008-frame-rotation.html">Next →</a></div>
+</main>
+</body>
+</html>

@@ -1,0 +1,29 @@
+<!doctype html>
+html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Task 005 – Render Loop & Resize Milestone</title>
+  <link rel="stylesheet" href="shared.css">
+</head>
+<body>
+<main>
+  <header>
+    <h1>Task 005 – Render Loop & Resize Handling</h1>
+    <p class="lead">Record draw commands, animate the cube, and recover from resize/out-of-date swapchains.</p>
+  </header>
+  <section>
+    <div class="badge">Milestone goal</div>
+    <p>Have a rotating cube that draws every frame and rebuilds swapchain/pipeline cleanly on resize.</p>
+  </section>
+  <section>
+    <h2>Key steps</h2>
+    <ul>
+      <li>Record command buffers per swapchain image: bind pipeline, vertex/index buffers, descriptors; draw indexed cube.</li>
+      <li>Update UBO per frame (rotation), submit, present with semaphores/fences.</li>
+      <li>Detect resize/out-of-date and recreate swapchain-dependent resources safely.</li>
+    </ul>
+  </section>
+  <div class="nav"><a href="index.html">← Back to Hub</a> <a href="step-005-01-record-commands.html">Next →</a></div>
+</main>
+</body>
+</html>

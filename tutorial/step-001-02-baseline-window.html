@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Task 001.02 – Baseline GLFW Window</title>
+  <link rel="stylesheet" href="shared.css">
+</head>
+<body>
+<main>
+  <header>
+    <h1>Task 001.02 – Baseline GLFW Window (No API)</h1>
+    <p class="lead">Set up Go module, dependencies, and a minimal window loop.</p>
+  </header>
+  <section>
+    <h2>1) Init module & dependencies</h2>
+<pre><code>go mod init Kube
+go get github.com/vulkan-go/glfw/v3.3/glfw@v0.0.0-20210402172934-58379a80228d
+go get github.com/vulkan-go/vulkan@v0.0.0-20221209234627-c0a353ae26c8
+go get github.com/go-gl/mathgl/mgl32@v1.2.0
+</code></pre>
+  </section>
+  <section>
+    <h2>2) Baseline window code</h2>
+<pre><code class="language-go">package main
+
+import (
+  "log"
+  "runtime"
+  "time"
+  "github.com/vulkan-go/glfw/v3.3/glfw"
+)
+
+func init() { runtime.LockOSThread() }
+
+func main() {
+  if err := glfw.Init(); err != nil { log.Fatalf("init glfw: %v", err) }
+  defer glfw.Terminate()
+
+  glfw.WindowHint(glfw.ClientAPI, glfw.NoAPI)
+  win, err := glfw.CreateWindow(800, 600, "Baseline", nil, nil)
+  if err != nil { log.Fatalf("create window: %v", err) }
+  defer win.Destroy()
+
+  // wait for non-zero framebuffer size
+  for {
+    w, h := win.GetFramebufferSize()
+    if w > 0 && h > 0 { break }
+    glfw.WaitEventsTimeout(0.01)
+  }
+
+  win.SetKeyCallback(func(w *glfw.Window, key glfw.Key, scancode int, action glfw.Action, mods glfw.ModifierKey) {
+    if key == glfw.KeyEscape && action == glfw.Press { w.SetShouldClose(true) }
+  })
+
+  for !win.ShouldClose() {
+    glfw.PollEvents()
+    time.Sleep(1 * time.Millisecond)
+  }
+}
+</code></pre>
+  </section>
+  <section>
+    <h2>3) Run it</h2>
+<pre><code>go run .
+</code></pre>
+    <p>You should see an empty window that closes on ESC. No Vulkan yet.</p>
+  </section>
+  <div class="nav"><a href="index.html">← Back to Hub</a> <a href="step-002-milestone-instance.html">Next →</a></div>
+</main>
+</body>
+</html>

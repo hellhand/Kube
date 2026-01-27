@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Task 003.02 – Render Pass, Framebuffers, Sync Loop</title>
+  <link rel="stylesheet" href="shared.css">
+</head>
+<body>
+<main>
+  <header>
+    <h1>Task 003.02 – Render Pass, Framebuffers, and Sync</h1>
+    <p class="lead">Define render pass, build framebuffers, allocate command buffers, and wire per-frame sync for a clear-color loop.</p>
+  </header>
+  <section>
+    <h2>1) Render pass</h2>
+    <ul>
+      <li>Attachments: color (swapchain format, layout PRESENT at end), depth (depth format, layout DEPTH_STENCIL_ATTACHMENT_OPTIMAL).</li>
+      <li>Subpass: references color + depth attachments.</li>
+    </ul>
+  </section>
+  <section>
+    <h2>2) Framebuffers</h2>
+    <ul>
+      <li>One framebuffer per swapchain image view plus the depth view.</li>
+    </ul>
+  </section>
+  <section>
+    <h2>3) Command pool/buffers</h2>
+    <ul>
+      <li>Create command pool (graphics queue family).</li>
+      <li>Allocate primary command buffers = swapchain image count.</li>
+    </ul>
+  </section>
+  <section>
+    <h2>4) Sync objects</h2>
+    <ul>
+      <li>Per-frame: imageAvailable semaphore, renderFinished semaphore, inFlight fence (start signaled).</li>
+      <li>Track images-in-flight fences to avoid double-submitting the same image.</li>
+    </ul>
+  </section>
+  <section>
+    <h2>5) Clear loop</h2>
+    <ol>
+      <li>Wait fence, acquire image.</li>
+      <li>Record command buffer: begin render pass, clear color/depth, end render pass.</li>
+      <li>Submit (wait imageAvailable, signal renderFinished), present (wait renderFinished).</li>
+    </ol>
+  </section>
+  <div class="nav"><a href="index.html">← Back to Hub</a> <a href="step-004-milestone-pipeline.html">Next →</a></div>
+</main>
+</body>
+</html>

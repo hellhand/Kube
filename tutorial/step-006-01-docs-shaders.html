@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Task 006.01 – Build/Run Docs & Shader Compile Helper</title>
+  <link rel="stylesheet" href="shared.css">
+</head>
+<body>
+<main>
+  <header>
+    <h1>Task 006.01 – Build/Run Docs & Shader Compile Helper</h1>
+    <p class="lead">Document how to build/run and compile shaders deterministically.</p>
+  </header>
+  <section>
+    <h2>Docs content</h2>
+    <ul>
+      <li>Prereqs: Go, Vulkan runtime, <code>glslc</code>, GLFW/X11 dev packages.</li>
+      <li>Build: <code>go build ./...</code></li>
+      <li>Run: <code>go run .</code> (mention <code>VK_VALIDATION=0</code> to disable validation).</li>
+      <li>Controls: ESC exits, SPACE pauses rotation.</li>
+    </ul>
+  </section>
+  <section>
+    <h2>Shader compile helper</h2>
+<pre><code>glslc shaders/cube.vert -o shaders/vert.spv
+glslc shaders/cube.frag -o shaders/frag.spv
+glslc shaders/overlay.vert -o shaders/overlay_vert.spv
+glslc shaders/overlay.frag -o shaders/overlay_frag.spv
+</code></pre>
+    <p>Provide a script/Makefile target to run these commands and fail on error.</p>
+  </section>
+  <div class="nav"><a href="index.html">← Back to Hub</a> <a href="step-006-02-smoke-validation.html">Next →</a></div>
+</main>
+</body>
+</html>

@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Task 002.02 – Surface, GPU Selection, Logical Device</title>
+  <link rel="stylesheet" href="shared.css">
+</head>
+<body>
+<main>
+  <header>
+    <h1>Task 002.02 – Surface, GPU Selection, Logical Device</h1>
+    <p class="lead">Create the window surface, choose a suitable GPU, and build the logical device with swapchain support.</p>
+  </header>
+  <section>
+    <h2>1) Create surface</h2>
+    <ul>
+      <li>Use GLFW to create the Vulkan surface bound to the window.</li>
+      <li>Store the surface handle for later swapchain creation.</li>
+    </ul>
+  </section>
+  <section>
+    <h2>2) Pick physical device</h2>
+    <ul>
+      <li>Enumerate devices; for each, query queue families for graphics and present support (surface-specific).</li>
+      <li>Check device extensions include <code>VK_KHR_swapchain</code>.</li>
+      <li>Check swapchain support: at least one format and one present mode.</li>
+      <li>Prefer discrete GPU if multiple devices qualify.</li>
+    </ul>
+  </section>
+  <section>
+    <h2>3) Create logical device</h2>
+    <ul>
+      <li>Queue create infos: graphics family (and present if different).</li>
+      <li>Enable device extension <code>VK_KHR_swapchain</code>; no extra layers needed on device.</li>
+      <li>Call <code>vulkan.CreateDevice</code>, then <code>vulkan.GetDeviceQueue</code> for graphics and present queues; store them.</li>
+    </ul>
+  </section>
+  <div class="nav"><a href="index.html">← Back to Hub</a> <a href="step-003-milestone-swapchain.html">Next →</a></div>
+</main>
+</body>
+</html>

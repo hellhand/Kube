@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Task 004.02 – Buffers, UBO, and Descriptors</title>
+  <link rel="stylesheet" href="shared.css">
+</head>
+<body>
+<main>
+  <header>
+    <h1>Task 004.02 – Cube Buffers, Uniforms, and Descriptors</h1>
+    <p class="lead">Create vertex/index buffers, per-frame UBOs, and descriptor sets to feed the pipeline.</p>
+  </header>
+  <section>
+    <h2>1) Vertex/index data</h2>
+    <p>Use 24 vertices (4 per face) to get correct UVs on each face; indexed draw:</p>
+<pre><code class="language-go">type vertex struct {
+  pos   mgl32.Vec3
+  color mgl32.Vec3
+  uv    mgl32.Vec2
+}
+var cubeVertices = []vertex{ /* 24 entries, per-face UVs */ }
+var cubeIndices  = []uint32{ /* 36 indices, 6 faces */ }</code></pre>
+  </section>
+  <section>
+    <h2>2) Buffers</h2>
+    <ul>
+      <li>Create host-visible, coherent buffers for vertices and indices (usage: vertex/index).</li>
+      <li>Map, copy the data, unmap.</li>
+    </ul>
+  </section>
+  <section>
+    <h2>3) Uniform buffers</h2>
+<pre><code class="language-go">type uniformBufferObject struct {
+  Model mgl32.Mat4
+  View  mgl32.Mat4
+  Proj  mgl32.Mat4
+}</code></pre>
+    <ul>
+      <li>Allocate one UBO per swapchain image (host-visible, coherent).</li>
+      <li>Update each frame with model/view/proj matrices.</li>
+    </ul>
+  </section>
+  <section>
+    <h2>4) Descriptor sets</h2>
+    <ul>
+      <li>Descriptor set layout: binding 0 = UBO (vertex), binding 1 = combined image sampler (fragment).</li>
+      <li>Allocate one descriptor set per swapchain image from a pool sized for UBO + sampler counts.</li>
+      <li>Write descriptors: buffer info for binding 0, image info (sampler/view, layout SHADER_READ_ONLY_OPTIMAL) for binding 1.</li>
+    </ul>
+  </section>
+  <div class="nav"><a href="index.html">← Back to Hub</a> <a href="step-005-milestone-render-loop.html">Next →</a></div>
+</main>
+</body>
+</html>

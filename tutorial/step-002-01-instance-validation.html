@@ -1,0 +1,49 @@
+<!doctype html>
+html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Task 002.01 – Instance with Validation & Debug Messenger</title>
+  <link rel="stylesheet" href="shared.css">
+</head>
+<body>
+<main>
+  <header>
+    <h1>Task 002.01 – Instance with Validation & Debug Messenger</h1>
+    <p class="lead">Create a Vulkan instance that requests validation (if available) and logs validation output.</p>
+  </header>
+  <section>
+    <div class="badge">Steps</div>
+    <ol>
+      <li>Get required extensions from GLFW: <code>glfw.GetRequiredInstanceExtensions()</code>.</li>
+      <li>Prepare layer list: <code>{"VK_LAYER_KHRONOS_validation"}</code>; if unavailable, log and disable validation.</li>
+      <li>Create instance:
+<pre><code class="language-go">appName := makeCString("Kube Vulkan")
+engineName := makeCString("No Engine")
+defer C.free(unsafe.Pointer(appName.cptr))
+defer C.free(unsafe.Pointer(engineName.cptr))
+
+createInfo := vulkan.InstanceCreateInfo{
+  SType: vulkan.StructureTypeInstanceCreateInfo,
+  PApplicationInfo: &vulkan.ApplicationInfo{
+    SType:              vulkan.StructureTypeApplicationInfo,
+    PApplicationName:   appName.str,
+    ApplicationVersion: vulkan.MakeVersion(1,0,0),
+    PEngineName:        engineName.str,
+    EngineVersion:      vulkan.MakeVersion(1,0,0),
+    ApiVersion:         vulkan.ApiVersion10,
+  },
+  EnabledExtensionCount:   uint32(len(exts)),
+  PpEnabledExtensionNames: exts,
+  EnabledLayerCount:       uint32(len(validationLayers)),
+  PpEnabledLayerNames:     validationLayers,
+}
+</code></pre>
+      </li>
+      <li>Install debug messenger (if validation on) to print warnings/errors.</li>
+      <li>Call <code>vulkan.InitInstance(instance)</code> once created.</li>
+    </ol>
+  </section>
+  <div class="nav"><a href="index.html">← Back to Hub</a> <a href="step-002-02-surface-device.html">Next →</a></div>
+</main>
+</body>
+</html>

@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Task 002 – Instance, Surface, Device Milestone</title>
+  <link rel="stylesheet" href="shared.css">
+</head>
+<body>
+<main>
+  <header>
+    <h1>Task 002 – Instance, Surface, and Device</h1>
+    <p class="lead">Create a Vulkan instance, hook validation, make the window surface, and build a logical device.</p>
+  </header>
+  <section>
+    <div class="badge">Milestone goal</div>
+    <p>By the end, the app starts with a valid instance, debug messenger (if validation exists), a window surface, and a logical device with graphics + present queues.</p>
+  </section>
+  <section>
+    <h2>1) Initialize Vulkan & validation</h2>
+    <ul>
+      <li>Call <code>vulkan.SetGetInstanceProcAddr(glfw.GetVulkanGetInstanceProcAddress())</code>, then <code>vulkan.Init()</code>.</li>
+      <li>Request validation layers (<code>VK_LAYER_KHRONOS_validation</code>) if available; otherwise log and continue.</li>
+      <li>Create a debug messenger/callback to log validation messages.</li>
+    </ul>
+  </section>
+  <section>
+    <h2>2) Create the surface</h2>
+    <ul>
+      <li>Use <code>glfw.CreateWindowSurface(instance, window, nil, &surface)</code> (via vulkan-go bindings).</li>
+      <li>Store the surface handle for swapchain creation later.</li>
+    </ul>
+  </section>
+  <section>
+    <h2>3) Pick a physical device</h2>
+    <ul>
+      <li>Enumerate devices; for each, check:
+        <ul>
+          <li>Queue families: one supports graphics, one supports present (can be same index).</li>
+          <li>Device extension support: <code>VK_KHR_swapchain</code>.</li>
+          <li>Swapchain support: at least one format and present mode.</li>
+        </ul>
+      </li>
+      <li>Prefer discrete GPU if multiple candidates.</li>
+    </ul>
+  </section>
+  <section>
+    <h2>4) Create logical device & queues</h2>
+    <ul>
+      <li>Specify queue create infos for graphics (and present if distinct).</li>
+      <li>Enable device extension <code>VK_KHR_swapchain</code>.</li>
+      <li>Retrieve graphics and present queues with <code>GetDeviceQueue</code>; store them.</li>
+    </ul>
+  </section>
+  <section>
+    <h2>5) Quick sanity run</h2>
+<pre><code>go run .
+# Should log instance/device created and exit (no drawing yet).</code></pre>
+  </section>
+  <div class="nav"><a href="index.html">← Back to Hub</a> <a href="step-002-01-instance-validation.html">Next →</a></div>
+</main>
+</body>
+</html>

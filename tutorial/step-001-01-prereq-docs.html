@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Task 001.01 – Document Prerequisites</title>
+  <link rel="stylesheet" href="shared.css">
+</head>
+<body>
+<main>
+  <header>
+    <h1>Task 001.01 – Document Prerequisites & SDK Verification</h1>
+    <p class="lead">Write down what’s needed and how to verify it works.</p>
+  </header>
+  <section>
+    <div class="badge">What to capture</div>
+    <ul>
+      <li>OS notes, Go version, Vulkan SDK/driver requirements.</li>
+      <li>Packages: X11/GLFW dev headers, <code>glslc</code>.</li>
+      <li>Verification commands and expected success (no errors).</li>
+      <li>Validation env hints: <code>VK_LAYER_PATH</code>, <code>VK_ICD_FILENAMES</code>, <code>VK_INSTANCE_LAYERS</code>.</li>
+    </ul>
+  </section>
+  <section>
+    <h2>Example doc snippet</h2>
+<pre><code>Requirements:
+- Go 1.24+, vulkaninfo works, glslc available.
+- Debian/Ubuntu packages: libx11-dev libglfw3-dev mesa-vulkan-drivers vulkan-tools.
+
+Verify:
+  vulkaninfo | head   # should print GPU info, no errors
+  glslc --version     # prints glslc version
+  go version
+
+Validation:
+  # request validation (default). To disable:
+  VK_VALIDATION=0 go run .
+</code></pre>
+  </section>
+  <div class="nav"><a href="index.html">← Back to Hub</a> <a href="step-001-02-baseline-window.html">Next →</a></div>
+</main>
+</body>
+</html>

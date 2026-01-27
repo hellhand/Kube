@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Task 009 – FPS Overlay HUD</title>
+  <link rel="stylesheet" href="shared.css">
+</head>
+<body>
+<main>
+  <header>
+    <h1>Task 009 – FPS Overlay</h1>
+    <p class="lead">Render an FPS counter in the top-left using a dedicated overlay pipeline.</p>
+  </header>
+  <section>
+    <h2>Shaders</h2>
+<pre><code class="language-glsl">// overlay.vert
+#version 450
+layout(location=0) in vec2 inPos;
+layout(location=1) in vec3 inColor;
+layout(location=0) out vec3 fragColor;
+void main() { fragColor = inColor; gl_Position = vec4(inPos, 0.0, 1.0); }
+
+// overlay.frag
+#version 450
+layout(location=0) in vec3 fragColor;
+layout(location=0) out vec4 outColor;
+void main() { outColor = vec4(fragColor, 1.0); }
+</code></pre>
+    <p>Compile to <code>overlay_vert.spv</code>, <code>overlay_frag.spv</code>.</p>
+  </section>
+  <section>
+    <h2>Pipeline</h2>
+    <ul>
+      <li>Vertex format: vec2 position, vec3 color.</li>
+      <li>Culling OFF, depth OFF, blend OFF (opaque).</li>
+      <li>Separate pipeline/layout from the main cube pipeline.</li>
+    </ul>
+  </section>
+  <section>
+    <h2>Data generation</h2>
+    <ul>
+      <li>Define a tiny bitmap font as strings of 1/0 per character.</li>
+      <li>For text like “FPS: 60.0”, expand chars into quads in pixel space, then convert to NDC.</li>
+      <li>Write vertices into a host-visible overlay vertex buffer; record a single indirect draw using an overlay indirect buffer.</li>
+    </ul>
+  </section>
+  <section>
+    <h2>FPS calculation</h2>
+    <ul>
+      <li>Track frames and elapsed time; every 1s, set <code>fpsValue = frames / seconds</code>, reset counter/time.</li>
+      <li>Update overlay vertices each frame with the current string.</li>
+    </ul>
+  </section>
+  <section>
+    <h2>Draw order</h2>
+    <ol>
+      <li>Draw cube first (color+depth).</li>
+      <li>Bind overlay pipeline and vertex buffer; <code>vkCmdDrawIndirect</code> for the overlay.</li>
+    </ol>
+  </section>
+  <div class="nav"><a href="index.html">← Back to Hub</a> <a href="step-010-split-modules.html">Next →</a></div>
+</main>
+</body>
+</html>

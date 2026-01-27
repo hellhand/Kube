@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Task 005.01 – Record Draw Commands</title>
+  <link rel="stylesheet" href="shared.css">
+</head>
+<body>
+<main>
+  <header>
+    <h1>Task 005.01 – Record Draw Commands for Cube</h1>
+    <p class="lead">Bind pipeline/resources and issue indexed draw for the cube each frame.</p>
+  </header>
+  <section>
+    <h2>Command buffer contents</h2>
+    <ol>
+      <li>Begin command buffer.</li>
+      <li>Begin render pass with clear values (color + depth).</li>
+      <li>Bind graphics pipeline.</li>
+      <li>Bind vertex buffer (binding 0) and index buffer (uint32 indices).</li>
+      <li>Bind descriptor set for the current swapchain image.</li>
+      <li><code>vkCmdDrawIndexed</code> with index count = 36.</li>
+      <li>End render pass.</li>
+      <li>End command buffer.</li>
+    </ol>
+<pre><code class="language-go">vulkan.CmdBeginRenderPass(cb, &rpInfo, vulkan.SubpassContentsInline)
+vulkan.CmdBindPipeline(cb, vulkan.PipelineBindPointGraphics, a.pipeline)
+vulkan.CmdBindVertexBuffers(cb, 0, 1, []vulkan.Buffer{a.vertexBuffer}, []vulkan.DeviceSize{0})
+vulkan.CmdBindIndexBuffer(cb, a.indexBuffer, 0, vulkan.IndexTypeUint32)
+vulkan.CmdBindDescriptorSets(cb, vulkan.PipelineBindPointGraphics, a.pipelineLayout, 0,
+  1, []vulkan.DescriptorSet{a.descriptorSets[imageIndex]}, 0, nil)
+vulkan.CmdDrawIndexed(cb, uint32(len(cubeIndices)), 1, 0, 0, 0)
+vulkan.CmdEndRenderPass(cb)
+</code></pre>
+  </section>
+  <section>
+    <h2>Submission flow</h2>
+    <ol>
+      <li>Wait fence for current frame.</li>
+      <li>Acquire swapchain image (signal imageAvailable).</li>
+      <li>Reset fence, reset command buffer, record as above.</li>
+      <li>Submit: wait imageAvailable at COLOR_ATTACHMENT_OUTPUT, signal renderFinished.</li>
+      <li>Present: wait renderFinished.</li>
+    </ol>
+  </section>
+  <div class="nav"><a href="index.html">← Back to Hub</a> <a href="step-005-02-resize-recreate.html">Next →</a></div>
+</main>
+</body>
+</html>

@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Task 004.01 – Shaders & Pipeline Setup</title>
+  <link rel="stylesheet" href="shared.css">
+</head>
+<body>
+<main>
+  <header>
+    <h1>Task 004.01 – Shaders & Pipeline Setup</h1>
+    <p class="lead">Write GLSL, compile to SPIR-V, and create the graphics pipeline against the swapchain render pass.</p>
+  </header>
+  <section>
+    <h2>1) Write shaders</h2>
+<pre><code class="language-glsl">// shaders/cube.vert
+#version 450
+layout(location=0) in vec3 inPos;
+layout(location=1) in vec3 inColor;
+layout(location=2) in vec2 inUV;
+layout(binding=0) uniform UniformBuffer { mat4 model; mat4 view; mat4 proj; } ubo;
+layout(location=0) out vec3 fragColor;
+layout(location=1) out vec2 fragUV;
+void main() {
+  fragColor = inColor;
+  fragUV = inUV;
+  gl_Position = ubo.proj * ubo.view * ubo.model * vec4(inPos, 1.0);
+}</code></pre>
+<pre><code class="language-glsl">// shaders/cube.frag
+#version 450
+layout(location=0) in vec3 fragColor;
+layout(location=1) in vec2 fragUV;
+layout(binding=1) uniform sampler2D texSampler;
+layout(location=0) out vec4 outColor;
+void main() {
+  outColor = texture(texSampler, fragUV);
+}</code></pre>
+  </section>
+  <section>
+    <h2>2) Compile</h2>
+<pre><code>glslc shaders/cube.vert -o shaders/vert.spv
+glslc shaders/cube.frag -o shaders/frag.spv</code></pre>
+  </section>
+  <section>
+    <h2>3) Pipeline state</h2>
+    <ul>
+      <li>Vertex input: binding 0 stride = sizeof(vertex), attributes: 0 pos (vec3), 1 color (vec3), 2 uv (vec2).</li>
+      <li>Input assembly: triangle list.</li>
+      <li>Viewport/scissor: swapchain extent.</li>
+      <li>Rasterizer: cull mode NONE; front face CCW.</li>
+      <li>Depth: test/write ON, compare LESS.</li>
+      <li>Blend: OFF (opaque).</li>
+      <li>Descriptor set layout: binding 0 UBO, binding 1 combined image sampler.</li>
+    </ul>
+  </section>
+  <section>
+    <h2>4) Create pipeline</h2>
+    <ul>
+      <li>Load SPIR-V into shader modules; set <code>PName="main"</code>.</li>
+      <li>Use render pass from swapchain, subpass 0.</li>
+      <li>Create pipeline layout referencing descriptor set layout.</li>
+      <li>Create graphics pipeline; destroy shader modules afterwards.</li>
+    </ul>
+  </section>
+  <div class="nav"><a href="index.html">← Back to Hub</a> <a href="step-004-02-buffers-descriptors.html">Next →</a></div>
+</main>
+</body>
+</html>
