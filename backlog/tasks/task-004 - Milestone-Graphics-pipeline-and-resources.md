@@ -1,7 +1,7 @@
 ---
 id: TASK-004
 title: 'Milestone: Graphics pipeline and resources'
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-01-27 16:39'
 labels: []
@@ -16,5 +16,5 @@ Parent milestone for shader assets, pipeline creation, descriptor layouts, and G
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 All child tasks complete and a graphics pipeline is ready to bind cube buffers and descriptors.
+- [x] #1 All child tasks complete and a graphics pipeline is ready to bind cube buffers and descriptors.
 <!-- AC:END -->

@@ -1,7 +1,7 @@
 ---
 id: TASK-005.01
 title: Record draw commands for rotating cube
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-01-27 16:40'
 labels: []
@@ -18,7 +18,7 @@ Record command buffers that bind the cube pipeline/resources, draw the indexed c
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Command buffers bind pipeline, vertex/index buffers, descriptor sets, and issue indexed draw for cube.
-- [ ] #2 Per-frame uniform updates apply rotation and basic camera/view/projection transforms.
-- [ ] #3 Render loop presents rotating cube frames without validation errors.
+- [x] #1 Command buffers bind pipeline, vertex/index buffers, descriptor sets, and issue indexed draw for cube.
+- [x] #2 Per-frame uniform updates apply rotation and basic camera/view/projection transforms.
+- [x] #3 Render loop presents rotating cube frames without validation errors.
 <!-- AC:END -->
