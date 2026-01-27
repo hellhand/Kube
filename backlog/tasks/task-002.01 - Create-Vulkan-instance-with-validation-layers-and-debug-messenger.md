@@ -13,7 +13,7 @@ parent_task_id: TASK-002
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
-Initialize Vulkan instance for GLFW surface creation, request validation layers conditionally, and wire a debug messenger to log validation output.
+Initialize Vulkan instance for GLFW surface creation, request validation layers conditionally (env override allowed), and wire a debug messenger to log validation output. Include C-allocated C-strings for app/engine names and layer/extension lists to avoid Go pointer issues when validation is enabled.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria

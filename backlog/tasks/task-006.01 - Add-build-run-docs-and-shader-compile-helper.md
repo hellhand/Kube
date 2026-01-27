@@ -13,7 +13,7 @@ parent_task_id: TASK-006
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
-Provide developer docs and scripts for building/running the cube, including shader compilation (glslc or equivalent) and any required env vars.
+Provide developer docs and scripts for building/running the cube, including shader compilation (glslc or equivalent) and any required env vars. Document shader paths (`shaders/cube.vert|frag`, `shaders/overlay.vert|frag`), compile commands to SPIR-V, and how to run `go run .` with optional toggles (`VK_VALIDATION`, `GODEBUG=cgocheck=0` if ever needed).
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria

@@ -12,7 +12,7 @@ parent_task_id: TASK-001
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
-Capture OS-specific Vulkan SDK setup, Go toolchain versions, required headers/libraries, and how to verify the runtime before coding.
+Capture OS-specific Vulkan SDK setup, Go toolchain versions, required headers/libraries (GLFW/X11 dev packages), and how to verify the runtime before coding. Include sample commands (`vulkaninfo`, `glslc --version`, minimal `go run` window with `glfw.NoAPI`), expected output, and env vars for validation layers (e.g., `VK_INSTANCE_LAYERS`, layer/ICD paths).
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria

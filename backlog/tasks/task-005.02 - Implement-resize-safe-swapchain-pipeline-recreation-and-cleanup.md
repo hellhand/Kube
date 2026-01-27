@@ -13,7 +13,7 @@ parent_task_id: TASK-005
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
-Detect out-of-date/resize events, tear down and rebuild swapchain-dependent resources (framebuffers, pipeline, depth), and ensure orderly cleanup on exit.
+Detect out-of-date/resize events, tear down and rebuild swapchain-dependent resources (framebuffers, pipeline, depth), and ensure orderly cleanup on exit. Wait for device idle, free command buffers, destroy framebuffers/render pass/pipelines/descriptor pools/depth resources, recreate swapchain+views+depth, then rebuild pipeline, descriptors, and command buffers; reset resize flag afterward.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria

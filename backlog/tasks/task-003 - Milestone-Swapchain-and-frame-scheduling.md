@@ -11,7 +11,7 @@ dependencies: []
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
-Parent milestone for swapchain creation, framebuffers, command buffers, and sync needed for a basic clear-color loop.
+Parent milestone for swapchain creation, framebuffers, command buffers, and sync needed for a basic clear-color loop: create swapchain with present/graphics sharing as needed, image views + depth buffer, render pass/framebuffers, primary command buffers, and per-frame semaphores/fences for acquire/submit/present.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria

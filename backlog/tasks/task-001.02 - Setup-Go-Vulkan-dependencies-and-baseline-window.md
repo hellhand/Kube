@@ -13,7 +13,7 @@ parent_task_id: TASK-001
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
-Add Go dependencies (vulkan-go, glfw, math), clean out placeholder code, and ship a minimal GLFW window loop as the starting point.
+Add Go dependencies (vulkan-go, glfw, math), clean out placeholder code, and ship a minimal GLFW window loop as the starting point. Ensure `runtime.LockOSThread()`, `glfw.Init/Terminate`, `WindowHint(NoAPI)`, an 800x600 window, ESC-close handling, and a simple `PollEvents` loop that exits cleanly.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria

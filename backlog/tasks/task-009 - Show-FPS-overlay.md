@@ -12,7 +12,7 @@ dependencies:
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
-Add an FPS indicator rendered in the top-left of the window using the overlay pipeline (`vk_overlay.go` + `overlay.vert/frag`) and glyph quads; compute FPS over a 1s window, update once per frame, and draw via indirect draw using dedicated overlay vertex + indirect buffers.
+Add an FPS indicator rendered in the top-left using the overlay pipeline (`vk_overlay.go` + `overlay.vert/frag`). Build a tiny font atlas as bit patterns, expand to screen-space quads, convert to NDC, and write into an overlay vertex buffer; issue a single indirect draw. Compute FPS over a 1s window (frame count / elapsed), update each frame, and ensure the overlay pipeline uses no depth and an opaque color blend so it draws over the scene.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria

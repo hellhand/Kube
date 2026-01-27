@@ -12,7 +12,7 @@ dependencies:
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
-Refactor the monolithic `vk_app.go` into logical Go files (types/init, swapchain/pipeline, resources, overlay, helpers, etc.) while preserving behavior. Keep all code in package `main`, ensure imports stay minimal, and maintain build/test parity. Use the existing splits as reference (`vk_texture.go` for texture creation/parse and sampler, `vk_overlay.go` for HUD pipeline/buffers/FPS text).
+Refactor the monolithic `vk_app.go` into logical Go files (types/init, swapchain/pipeline, resources, overlay, helpers, etc.) while preserving behavior. Keep all code in package `main`, ensure imports stay minimal, and maintain build/test parity. Use the existing splits as reference: `vk_texture.go` for texture creation/parse and sampler, `vk_overlay.go` for HUD pipeline/buffers/FPS text. Consider further splits for swapchain/render-pass/pipeline setup vs. buffer/descriptor creation vs. draw loop and cleanup.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria

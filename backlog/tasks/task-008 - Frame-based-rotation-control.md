@@ -12,7 +12,7 @@ dependencies:
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
-Replace time-based spin with frame-based angular steps (as now done via `debugFrames` counter in `updateUniformBuffer`); keep SPACE pause/resume by gating the frame counter, and allow tuning degrees-per-frame (currently ~0.75°/frame for 45°/s at 60 fps). Document the choice and keep animation accumulation deterministic.
+Replace time-based spin with frame-based angular steps (see `updateUniformBuffer` using `debugFrames` as the counter). Gate increments when paused (SPACE) so the angle freezes, then resumes smoothly. Expose/tune degrees-per-frame (e.g., 45°/s at 60 fps → 0.75° per frame), and wrap/normalize angle as needed. Document the approach so another dev can tweak the per-frame delta.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria

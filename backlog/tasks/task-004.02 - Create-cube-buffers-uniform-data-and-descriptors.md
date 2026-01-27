@@ -13,7 +13,7 @@ parent_task_id: TASK-004
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
-Define cube vertex/index data, upload via staging, set up per-frame uniform buffers (MVP), and allocate/update descriptor sets.
+Define cube vertex/index data (24 vertices for per-face UVs), upload via host-visible buffers, set up per-frame uniform buffers (MVP), and allocate/update descriptor sets. Ensure descriptor set layout matches bindings (0=UBO, 1=sampler), and stage indices/vertices into device buffers with coherent memory flags.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria

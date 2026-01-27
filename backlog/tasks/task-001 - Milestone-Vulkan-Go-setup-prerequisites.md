@@ -11,7 +11,7 @@ dependencies: []
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
-Parent milestone for environment prep, Go module setup, and a minimal runnable window baseline before Vulkan work.
+Parent milestone for environment prep, Go module setup, and a minimal runnable window baseline before Vulkan work. Ensure Go toolchain is installed, Vulkan loader/SDK (or distro packages) and X11/GLFW dev headers are present, `glslc` is available, and a trivial Go window (`glfw.CreateWindow` with `NoAPI`) launches without validation errors.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria

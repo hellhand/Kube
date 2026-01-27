@@ -11,7 +11,7 @@ dependencies: []
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
-Parent milestone for recording draw commands, cube transforms, present loop, and swapchain recreation on resize.
+Parent milestone for recording draw commands, cube transforms, present loop, and swapchain recreation on resize: update UBO per frame for rotation, bind buffers/descriptors, submit/present with sync, and rebuild swapchain/pipeline on framebuffer resize or out-of-date/suboptimal errors.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria

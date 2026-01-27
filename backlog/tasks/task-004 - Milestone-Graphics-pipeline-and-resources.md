@@ -11,7 +11,7 @@ dependencies: []
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
-Parent milestone for shader assets, pipeline creation, descriptor layouts, and GPU resources for the cube.
+Parent milestone for shader assets, pipeline creation, descriptor layouts, and GPU resources for the cube: compile GLSL to SPIR-V via `glslc`, define vertex input (pos/color/UV), set up descriptor set layout for UBO + sampler, and build a render-ready pipeline targeting the swapchain render pass.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria

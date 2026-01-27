@@ -13,7 +13,7 @@ parent_task_id: TASK-004
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
-Create shader sources (vertex/fragment) with a build step to SPIR-V, define descriptor/pipeline layouts, and build the graphics pipeline against the swapchain render pass.
+Create shader sources (vertex/fragment) with a build step to SPIR-V (via `glslc`), define descriptor/pipeline layouts (UBO + sampler), and build the graphics pipeline against the swapchain render pass. Configure viewport/scissor to swapchain extent, disable culling for the cube, enable depth test/write, and set color blend to opaque.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria

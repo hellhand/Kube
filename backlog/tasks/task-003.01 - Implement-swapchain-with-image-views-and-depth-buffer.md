@@ -13,7 +13,7 @@ parent_task_id: TASK-003
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
-Create the swapchain, color image views, and a depth buffer suitable for a 3D cube, with recreation support on resize or surface changes.
+Create the swapchain, color image views, and a depth buffer suitable for a 3D cube, with recreation support on resize or surface changes. Handle zero framebuffer extent by delaying creation, clamp extent to surface caps, and allocate depth image/memory in device-local memory with proper aspect/view; destroy/recreate views and depth on swapchain rebuild.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria

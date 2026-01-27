@@ -13,7 +13,7 @@ parent_task_id: TASK-006
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
-Ship a lightweight smoke test (or self-check mode) plus flags/env toggles for validation layers and debug logging.
+Ship a lightweight smoke test (or self-check mode) plus flags/env toggles for validation layers and debug logging. Consider a headless init flag that runs instance/device/swapchain creation then exits, honoring `VK_VALIDATION` env, and printing selected GPU, swapchain format/mode, and validation on/off.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria

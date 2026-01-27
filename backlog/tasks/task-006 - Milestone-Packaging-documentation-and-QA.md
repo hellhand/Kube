@@ -11,7 +11,7 @@ dependencies: []
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
-Parent milestone for build/run scripts, shader compile helpers, smoke tests, and user-facing documentation.
+Parent milestone for build/run scripts, shader compile helpers, smoke tests, and user-facing documentation: include commands to compile GLSL to SPIR-V, run the app (`go run .` with optional envs like `VK_VALIDATION=0`), and basic checks that the window opens, renders the cube/overlay, and exits cleanly (ESC).
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria

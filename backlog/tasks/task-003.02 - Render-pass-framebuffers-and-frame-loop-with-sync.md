@@ -13,7 +13,7 @@ parent_task_id: TASK-003
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
-Build the render pass (color+depth), framebuffers, command pool/buffers, and per-frame sync objects to run a clear-color acquire/draw/present loop.
+Build the render pass (color+depth), framebuffers, command pool/buffers, and per-frame sync objects to run a clear-color acquire/draw/present loop. Use double buffering semaphores/fences, reset fences each frame, bind command buffers per swapchain image, and ensure cleanup frees framebuffers and command buffers on swapchain recreation.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria

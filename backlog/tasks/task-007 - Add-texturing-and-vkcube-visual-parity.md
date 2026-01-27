@@ -11,7 +11,7 @@ dependencies: [TASK-005]
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
-Add a textured cube and adjust the background/visuals to mirror the classic `vkcube` demo: bind UBO + combined image sampler, use the embedded `lunarg.ppm` texture (see `texture_embed.go`), ensure UV-correct faces via 24-vertex layout, disable culling for visibility, keep depth testing on, and use the vkcube-style green backdrop.
+Add a textured cube and adjust the background/visuals to mirror the classic `vkcube` demo. Steps: embed the `lunarg.ppm` texture (`texture_embed.go`), parse it to RGBA in `vk_texture.go`, create image/view/sampler (R8G8B8A8 SRGB, shader-read layout). Use 24-vertex cube layout with per-face UVs and indices. Update shaders to read position/color/UV and sample the texture. Descriptor set layout binds UBO at 0 and combined image sampler at 1. Disable culling to keep all faces visible, keep depth testing on, and clear to the vkcube-style green background. Input controls: ESC to close, SPACE to pause rotation.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria

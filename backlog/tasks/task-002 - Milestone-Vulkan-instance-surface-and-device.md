@@ -11,7 +11,7 @@ dependencies: []
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
-Parent milestone covering Vulkan instance setup with validation, window surface integration, and selecting/creating a logical device.
+Parent milestone covering Vulkan instance setup with validation, window surface integration, and selecting/creating a logical device: enable validation when available, hook the debug callback, create the GLFW/X11 surface, pick a GPU supporting graphics+present queues, and create a logical device with `VK_KHR_swapchain` enabled.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria

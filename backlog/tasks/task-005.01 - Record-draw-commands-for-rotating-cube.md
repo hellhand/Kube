@@ -13,7 +13,7 @@ parent_task_id: TASK-005
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
-Record command buffers that bind the cube pipeline/resources, draw the indexed cube, and drive a render loop that updates rotation over time.
+Record command buffers that bind the cube pipeline/resources, draw the indexed cube, and drive a render loop that updates rotation over time. Bind pipeline, vertex/index buffers, descriptor sets per swapchain image, issue `vkCmdDrawIndexed`, and handle clear values for color+depth.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
