@@ -1425,11 +1425,12 @@ func (a *VulkanApp) createDescriptorSets() error {
 }
 
 func (a *VulkanApp) updateUniformBuffer(imageIndex uint32) error {
-	elapsed := a.animationSeconds()
-	spinZ := elapsed * mgl32.DegToRad(45)
-	spinY := elapsed * mgl32.DegToRad(30)
+	elapsed := float32(a.debugFrames) * 0.10
+	degPerFrame := 45.0 / 60.0
+	spinZ := elapsed * mgl32.DegToRad(float32(degPerFrame))
+	//spinY := elapsed * mgl32.DegToRad(30)
 	model := mgl32.HomogRotate3D(spinZ, mgl32.Vec3{0, 0, 1})
-	model = mgl32.HomogRotate3D(spinY, mgl32.Vec3{0, 1, 0}).Mul4(model)
+	//model = mgl32.HomogRotate3D(spinY, mgl32.Vec3{0, 1, 0}).Mul4(model)
 	view := mgl32.LookAtV(
 		mgl32.Vec3{3, 3, 3},
 		mgl32.Vec3{0, 0, 0},
@@ -2135,8 +2136,7 @@ func (a *VulkanApp) recordCommandBuffer(cb vulkan.CommandBuffer, imageIndex int)
 		return fmt.Errorf("begin command buffer: %w", vulkan.Error(res))
 	}
 
-	// vkcube-style green backdrop to highlight the rotating cube.
-	clearColor := vulkan.NewClearValue([]float32{0.15, 0.35, 0.15, 1.0})
+	clearColor := vulkan.NewClearValue([]float32{0.05, 0.05, 0.05, 1.0})
 	clearDepth := vulkan.NewClearDepthStencil(1.0, 0)
 	clearValues := []vulkan.ClearValue{clearColor, clearDepth}
 
@@ -2243,7 +2243,9 @@ func (a *VulkanApp) DrawFrame() error {
 	if a.debugFrames < 5 {
 		log.Printf("frame %d presented (image %d, res=%v)", a.debugFrames, imageIndex, res)
 	}
-	a.debugFrames++
+	if !a.paused {
+		a.debugFrames++
+	}
 
 	a.currentFrame = (a.currentFrame + 1) % maxFramesInFlight
 	return nil
