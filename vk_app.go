@@ -50,6 +50,7 @@ type cString struct {
 	cptr *C.char
 }
 
+// makeCString allocates a C string and exposes it as a Go string sharing the same backing memory.
 func makeCString(s string) cString {
 	c := C.CString(s)
 	var goStr string
@@ -59,6 +60,7 @@ func makeCString(s string) cString {
 	return cString{str: goStr, cptr: c}
 }
 
+// makeCStringSlice converts Go strings to a slice usable by Vulkan, returning the C pointers for later free.
 func makeCStringSlice(src []string) ([]string, []*C.char) {
 	out := make([]string, len(src))
 	ptrs := make([]*C.char, len(src))
@@ -70,6 +72,7 @@ func makeCStringSlice(src []string) ([]string, []*C.char) {
 	return out, ptrs
 }
 
+// freeCStrings frees C strings previously allocated with makeCStringSlice.
 func freeCStrings(ptrs []*C.char) {
 	for _, p := range ptrs {
 		if p != nil {
@@ -206,6 +209,7 @@ type VulkanApp struct {
 	overlayVertexCount        uint32
 }
 
+// newVulkanApp wires configuration, creates the Vulkan app, and performs all initialization.
 func newVulkanApp(window *glfw.Window) (*VulkanApp, error) {
 	cfg := appConfig{
 		enableValidation: enableValidationLayers(),
@@ -222,6 +226,7 @@ func newVulkanApp(window *glfw.Window) (*VulkanApp, error) {
 	return app, nil
 }
 
+// enableValidationLayers inspects VK_VALIDATION to decide whether to request validation.
 func enableValidationLayers() bool {
 	val := os.Getenv("VK_VALIDATION")
 	if val == "" {
@@ -235,6 +240,7 @@ func enableValidationLayers() bool {
 	}
 }
 
+// togglePause switches rotation on/off and tracks timing to keep animation consistent.
 func (a *VulkanApp) togglePause() {
 	if a.paused {
 		a.startTime = time.Now()
@@ -246,6 +252,7 @@ func (a *VulkanApp) togglePause() {
 	a.paused = true
 }
 
+// animationSeconds returns total unpaused time in seconds for time-based animations.
 func (a *VulkanApp) animationSeconds() float32 {
 	active := a.pausedAccum
 	if !a.paused {
@@ -254,11 +261,13 @@ func (a *VulkanApp) animationSeconds() float32 {
 	return float32(active.Seconds())
 }
 
+// initVulkan runs the full Vulkan initialization sequence and logs each major milestone.
 func (a *VulkanApp) initVulkan() error {
 	vulkan.SetGetInstanceProcAddr(glfw.GetVulkanGetInstanceProcAddress())
 	if err := vulkan.Init(); err != nil {
 		return fmt.Errorf("vulkan init: %w", err)
 	}
+	// Instance + surface + device bring up.
 	if err := a.createInstance(); err != nil {
 		return err
 	}
@@ -302,6 +311,7 @@ func (a *VulkanApp) initVulkan() error {
 		return err
 	}
 	log.Printf("Descriptor set layout created")
+	// Graphics/overlay pipelines.
 	if err := a.createGraphicsPipeline(); err != nil {
 		return err
 	}
@@ -367,6 +377,7 @@ func (a *VulkanApp) initVulkan() error {
 	return nil
 }
 
+// createInstance builds the Vulkan instance, optionally enabling validation.
 func (a *VulkanApp) createInstance() error {
 	if !glfw.VulkanSupported() {
 		return errors.New("GLFW Vulkan loader not found")
@@ -444,6 +455,7 @@ func (a *VulkanApp) createInstance() error {
 	return nil
 }
 
+// validationLayersSupported checks whether all requested validation layers are available.
 func (a *VulkanApp) validationLayersSupported() bool {
 	var count uint32
 	if vulkan.EnumerateInstanceLayerProperties(&count, nil) != vulkan.Success {
@@ -467,6 +479,7 @@ func (a *VulkanApp) validationLayersSupported() bool {
 	return true
 }
 
+// setupDebugCallback installs the debug report callback when validation is enabled.
 func (a *VulkanApp) setupDebugCallback() error {
 	if !a.cfg.enableValidation {
 		return nil
@@ -488,6 +501,7 @@ func (a *VulkanApp) setupDebugCallback() error {
 	return nil
 }
 
+// createSurface creates the Vulkan surface bound to the GLFW window.
 func (a *VulkanApp) createSurface() error {
 	surfacePtr, err := a.window.CreateWindowSurface(a.instance, nil)
 	if err != nil {
@@ -497,6 +511,7 @@ func (a *VulkanApp) createSurface() error {
 	return nil
 }
 
+// pickPhysicalDevice chooses the best available GPU that supports required queues and swapchain.
 func (a *VulkanApp) pickPhysicalDevice() error {
 	var count uint32
 	if res := vulkan.EnumeratePhysicalDevices(a.instance, &count, nil); res != vulkan.Success || count == 0 {
@@ -539,6 +554,7 @@ func (a *VulkanApp) pickPhysicalDevice() error {
 	return nil
 }
 
+// deviceScore returns a heuristic score to prefer discrete over integrated GPUs.
 func (a *VulkanApp) deviceScore(device vulkan.PhysicalDevice) int32 {
 	var props vulkan.PhysicalDeviceProperties
 	vulkan.GetPhysicalDeviceProperties(device, &props)
@@ -554,6 +570,7 @@ func (a *VulkanApp) deviceScore(device vulkan.PhysicalDevice) int32 {
 	}
 }
 
+// deviceExtensionsSupported verifies VK_KHR_swapchain is available.
 func (a *VulkanApp) deviceExtensionsSupported(device vulkan.PhysicalDevice) bool {
 	var count uint32
 	if res := vulkan.EnumerateDeviceExtensionProperties(device, "", &count, nil); res != vulkan.Success {
@@ -577,6 +594,7 @@ func (a *VulkanApp) deviceExtensionsSupported(device vulkan.PhysicalDevice) bool
 	return true
 }
 
+// findQueueFamilies locates graphics and present queue families for the device.
 func (a *VulkanApp) findQueueFamilies(device vulkan.PhysicalDevice) queueFamilyIndices {
 	var count uint32
 	vulkan.GetPhysicalDeviceQueueFamilyProperties(device, &count, nil)
@@ -603,6 +621,7 @@ func (a *VulkanApp) findQueueFamilies(device vulkan.PhysicalDevice) queueFamilyI
 	return indices
 }
 
+// createLogicalDevice creates the logical device and retrieves graphics/present queues.
 func (a *VulkanApp) createLogicalDevice() error {
 	queueInfos := []vulkan.DeviceQueueCreateInfo{}
 	uniqueFamilies := map[uint32]bool{
@@ -692,6 +711,7 @@ func (a *VulkanApp) createLogicalDevice() error {
 	return nil
 }
 
+// querySwapchainSupport gathers surface capabilities, formats, and present modes.
 func (a *VulkanApp) querySwapchainSupport(device vulkan.PhysicalDevice) swapchainSupport {
 	var details swapchainSupport
 	log.Printf("querySwapchainSupport: capabilities")
@@ -721,6 +741,7 @@ func (a *VulkanApp) querySwapchainSupport(device vulkan.PhysicalDevice) swapchai
 	return details
 }
 
+// chooseSwapSurfaceFormat prefers SRGB if available, otherwise falls back to the first format.
 func chooseSwapSurfaceFormat(available []vulkan.SurfaceFormat) vulkan.SurfaceFormat {
 	for _, f := range available {
 		if f.Format == vulkan.FormatB8g8r8a8Srgb && f.ColorSpace == vulkan.ColorSpaceSrgbNonlinear {
@@ -730,6 +751,7 @@ func chooseSwapSurfaceFormat(available []vulkan.SurfaceFormat) vulkan.SurfaceFor
 	return available[0]
 }
 
+// chooseSwapPresentMode picks MAILBOX when present, otherwise FIFO.
 func chooseSwapPresentMode(available []vulkan.PresentMode) vulkan.PresentMode {
 	for _, m := range available {
 		if m == vulkan.PresentModeMailbox {
@@ -739,6 +761,7 @@ func chooseSwapPresentMode(available []vulkan.PresentMode) vulkan.PresentMode {
 	return vulkan.PresentModeFifo
 }
 
+// chooseSwapExtent clamps the window framebuffer size to the surface limits.
 func chooseSwapExtent(caps vulkan.SurfaceCapabilities, window *glfw.Window) vulkan.Extent2D {
 	if caps.CurrentExtent.Width != math.MaxUint32 && caps.CurrentExtent.Width != 0 && caps.CurrentExtent.Height != 0 {
 		return caps.CurrentExtent
@@ -773,6 +796,7 @@ func chooseSwapExtent(caps vulkan.SurfaceCapabilities, window *glfw.Window) vulk
 	return extent
 }
 
+// createSwapchain builds the swapchain based on surface support and stores images and extent.
 func (a *VulkanApp) createSwapchain() error {
 	// Ensure the window has a non-zero framebuffer before querying swapchain support.
 	for {
@@ -845,6 +869,7 @@ func (a *VulkanApp) createSwapchain() error {
 	return nil
 }
 
+// createImageViews wraps swapchain images in views for the render pass attachments.
 func (a *VulkanApp) createImageViews() error {
 	a.swapchainViews = make([]vulkan.ImageView, len(a.swapchainImages))
 	for i, img := range a.swapchainImages {
@@ -857,6 +882,7 @@ func (a *VulkanApp) createImageViews() error {
 	return nil
 }
 
+// createDepthResources allocates the depth image, memory, and view matching swapchain size.
 func (a *VulkanApp) createDepthResources() error {
 	if a.swapchainExtent.Width == 0 || a.swapchainExtent.Height == 0 {
 		return fmt.Errorf("swapchain extent is zero; cannot create depth resources")
@@ -1070,6 +1096,7 @@ func (a *VulkanApp) transitionImageLayout(image vulkan.Image, format vulkan.Form
 	})
 }
 
+// copyBufferToImage records a buffer-to-image transfer for a linear staging upload.
 func (a *VulkanApp) copyBufferToImage(buffer vulkan.Buffer, image vulkan.Image, width, height uint32) error {
 	return a.oneTimeCommands(func(cb vulkan.CommandBuffer) {
 		region := vulkan.BufferImageCopy{
@@ -1089,6 +1116,7 @@ func (a *VulkanApp) copyBufferToImage(buffer vulkan.Buffer, image vulkan.Image, 
 	})
 }
 
+// createRenderPass defines the color+depth attachments and subpass dependencies.
 func (a *VulkanApp) createRenderPass() error {
 	colorAttachment := vulkan.AttachmentDescription{
 		Format:         a.swapchainFormat,
@@ -1162,7 +1190,9 @@ func (a *VulkanApp) createRenderPass() error {
 	return nil
 }
 
+// createUniformBuffers allocates and stores uniform buffers for each swapchain image.
 func (a *VulkanApp) createUniformBuffers() error {
+	// Allocate one uniform buffer per swapchain image to avoid stalls when updating UBOs.
 	bufferSize := vulkan.DeviceSize(unsafe.Sizeof(uniformBufferObject{}))
 	count := len(a.swapchainImages)
 	a.uniformBuffers = make([]vulkan.Buffer, count)
@@ -1178,7 +1208,9 @@ func (a *VulkanApp) createUniformBuffers() error {
 	return nil
 }
 
+// createDescriptorPool builds a descriptor pool sized for the swapchain images.
 func (a *VulkanApp) createDescriptorPool() error {
+	// Pool sized for per-frame UBO + sampler descriptors; recreated on swapchain rebuild.
 	poolSizes := []vulkan.DescriptorPoolSize{
 		{
 			Type:            vulkan.DescriptorTypeUniformBuffer,
@@ -1208,7 +1240,9 @@ func (a *VulkanApp) createDescriptorPool() error {
 	return nil
 }
 
+// createDescriptorSets allocates descriptor sets and writes UBO + sampler bindings.
 func (a *VulkanApp) createDescriptorSets() error {
+	// Allocate and write descriptors for each swapchain image (UBO + texture).
 	layouts := make([]vulkan.DescriptorSetLayout, len(a.swapchainImages))
 	for i := range layouts {
 		layouts[i] = a.descriptorSetLayout
@@ -1277,6 +1311,7 @@ func (a *VulkanApp) createDescriptorSets() error {
 	return nil
 }
 
+// updateUniformBuffer writes the model/view/projection matrices into the UBO for a frame.
 func (a *VulkanApp) updateUniformBuffer(imageIndex uint32) error {
 	elapsed := float32(a.debugFrames)
 	degPerFrame := 45.0 / 60.0
@@ -1310,6 +1345,7 @@ func (a *VulkanApp) updateUniformBuffer(imageIndex uint32) error {
 	return nil
 }
 
+// createVertexBuffer uploads cube vertices into a host-visible vertex buffer.
 func (a *VulkanApp) createVertexBuffer() error {
 	bufferSize := vulkan.DeviceSize(len(cubeVertices)) * vulkan.DeviceSize(unsafe.Sizeof(vertex{}))
 	buf, mem, err := a.createBuffer(bufferSize, vulkan.BufferUsageFlags(vulkan.BufferUsageVertexBufferBit), vulkan.MemoryPropertyHostVisibleBit|vulkan.MemoryPropertyHostCoherentBit)
@@ -1329,6 +1365,7 @@ func (a *VulkanApp) createVertexBuffer() error {
 	return nil
 }
 
+// createIndexBuffer uploads cube indices into a host-visible index buffer.
 func (a *VulkanApp) createIndexBuffer() error {
 	bufferSize := vulkan.DeviceSize(len(cubeIndices) * 4)
 	buf, mem, err := a.createBuffer(bufferSize, vulkan.BufferUsageFlags(vulkan.BufferUsageIndexBufferBit), vulkan.MemoryPropertyHostVisibleBit|vulkan.MemoryPropertyHostCoherentBit)
@@ -1348,6 +1385,7 @@ func (a *VulkanApp) createIndexBuffer() error {
 	return nil
 }
 
+// verticesToBytes reinterprets vertex structs as a byte slice.
 func verticesToBytes(verts []vertex) []byte {
 	size := len(verts) * int(unsafe.Sizeof(vertex{}))
 	out := make([]byte, size)
@@ -1356,6 +1394,7 @@ func verticesToBytes(verts []vertex) []byte {
 	return out
 }
 
+// indicesToBytes reinterprets indices as bytes.
 func indicesToBytes(idxs []uint32) []byte {
 	size := len(idxs) * 4
 	out := make([]byte, size)
@@ -1364,6 +1403,7 @@ func indicesToBytes(idxs []uint32) []byte {
 	return out
 }
 
+// createDescriptorSetLayout defines the bindings for UBO and combined image sampler.
 func (a *VulkanApp) createDescriptorSetLayout() error {
 	uLayoutBinding := vulkan.DescriptorSetLayoutBinding{
 		Binding:         0,
@@ -1396,6 +1436,7 @@ func (a *VulkanApp) createDescriptorSetLayout() error {
 }
 
 func (a *VulkanApp) createGraphicsPipeline() error {
+	// Build the main cube graphics pipeline (shaders, vertex layout, depth, no culling).
 	vertCode, err := os.ReadFile("shaders/vert.spv")
 	if err != nil {
 		return fmt.Errorf("read vertex shader: %w", err)
@@ -1405,6 +1446,7 @@ func (a *VulkanApp) createGraphicsPipeline() error {
 		return fmt.Errorf("read fragment shader: %w", err)
 	}
 
+	// Shader modules.
 	vertModule, err := a.createShaderModule(vertCode)
 	if err != nil {
 		return err
@@ -1569,6 +1611,7 @@ func (a *VulkanApp) createGraphicsPipeline() error {
 	return nil
 }
 
+// createShaderModule wraps SPIR-V bytes into a VkShaderModule.
 func (a *VulkanApp) createShaderModule(code []byte) (vulkan.ShaderModule, error) {
 	codeAligned := bytesToUint32(code)
 	createInfo := vulkan.ShaderModuleCreateInfo{
@@ -1583,6 +1626,7 @@ func (a *VulkanApp) createShaderModule(code []byte) (vulkan.ShaderModule, error)
 	return module, nil
 }
 
+// bytesToUint32 reinterprets shader bytecode as uint32 words required by Vulkan.
 func bytesToUint32(data []byte) []uint32 {
 	if len(data)%4 != 0 {
 		panic("shader code length must be multiple of 4")
@@ -1591,6 +1635,7 @@ func bytesToUint32(data []byte) []uint32 {
 	return hdr
 }
 
+// createBuffer allocates a buffer and binds memory satisfying the requested properties.
 func (a *VulkanApp) createBuffer(size vulkan.DeviceSize, usage vulkan.BufferUsageFlags, properties vulkan.MemoryPropertyFlagBits) (vulkan.Buffer, vulkan.DeviceMemory, error) {
 	bufferInfo := vulkan.BufferCreateInfo{
 		SType:       vulkan.StructureTypeBufferCreateInfo,
@@ -1639,6 +1684,7 @@ func (a *VulkanApp) createBuffer(size vulkan.DeviceSize, usage vulkan.BufferUsag
 	return *bufferOut, *bufferMemoryOut, nil
 }
 
+// createFramebuffers builds one framebuffer per swapchain image, pairing color+depth views.
 func (a *VulkanApp) createFramebuffers() error {
 	a.framebuffers = make([]vulkan.Framebuffer, len(a.swapchainViews))
 	for i := range a.swapchainViews {
@@ -1668,6 +1714,7 @@ func (a *VulkanApp) createFramebuffers() error {
 	return nil
 }
 
+// createCommandPool creates a resettable command pool for graphics queue recording.
 func (a *VulkanApp) createCommandPool() error {
 	poolInfo := vulkan.CommandPoolCreateInfo{
 		SType:            vulkan.StructureTypeCommandPoolCreateInfo,
@@ -1687,6 +1734,7 @@ func (a *VulkanApp) createCommandPool() error {
 	return nil
 }
 
+// allocateCommandBuffers allocates one primary command buffer per framebuffer.
 func (a *VulkanApp) allocateCommandBuffers() error {
 	allocInfo := vulkan.CommandBufferAllocateInfo{
 		SType:              vulkan.StructureTypeCommandBufferAllocateInfo,
@@ -1719,6 +1767,7 @@ func (a *VulkanApp) allocateCommandBuffers() error {
 	return nil
 }
 
+// createSyncObjects creates per-frame semaphores/fences and image-in-flight tracking.
 func (a *VulkanApp) createSyncObjects() error {
 	a.imageAvailable = make([]vulkan.Semaphore, maxFramesInFlight)
 	a.renderFinished = make([]vulkan.Semaphore, maxFramesInFlight)
@@ -1775,10 +1824,12 @@ func (a *VulkanApp) createSyncObjects() error {
 	return nil
 }
 
+// requestSwapchainRecreate flags that a swapchain rebuild is needed (e.g., on resize).
 func (a *VulkanApp) requestSwapchainRecreate() {
 	a.framebufferResized = true
 }
 
+// oneTimeCommands runs fn inside a transient command buffer submitted to the graphics queue.
 func (a *VulkanApp) oneTimeCommands(fn func(vulkan.CommandBuffer)) error {
 	allocInfo := vulkan.CommandBufferAllocateInfo{
 		SType:              vulkan.StructureTypeCommandBufferAllocateInfo,
@@ -1817,6 +1868,7 @@ func (a *VulkanApp) oneTimeCommands(fn func(vulkan.CommandBuffer)) error {
 	return nil
 }
 
+// debugClearSwapchainImage is a magenta clear helper to verify swapchain image writes.
 func (a *VulkanApp) debugClearSwapchainImage(imageIndex uint32) error {
 	return a.oneTimeCommands(func(cb vulkan.CommandBuffer) {
 		subresource := vulkan.ImageSubresourceRange{
@@ -1885,6 +1937,7 @@ func (a *VulkanApp) debugClearSwapchainImage(imageIndex uint32) error {
 	})
 }
 
+// cleanupSwapchain tears down all resources tied to the current swapchain.
 func (a *VulkanApp) cleanupSwapchain() {
 	if len(a.commandBuffers) > 0 {
 		vulkan.FreeCommandBuffers(a.device, a.commandPool, uint32(len(a.commandBuffers)), a.commandBuffers)
@@ -1950,6 +2003,7 @@ func (a *VulkanApp) cleanupSwapchain() {
 	}
 }
 
+// recreateSwapchain rebuilds swapchain-dependent resources after resize/out-of-date.
 func (a *VulkanApp) recreateSwapchain() error {
 	vulkan.DeviceWaitIdle(a.device)
 	a.cleanupSwapchain()
@@ -1992,6 +2046,7 @@ func (a *VulkanApp) recreateSwapchain() error {
 	return nil
 }
 
+// recordCommandBuffer encodes the cube draw and overlay into the provided command buffer.
 func (a *VulkanApp) recordCommandBuffer(cb vulkan.CommandBuffer, imageIndex int) error {
 	beginInfo := vulkan.CommandBufferBeginInfo{
 		SType: vulkan.StructureTypeCommandBufferBeginInfo,
@@ -2044,6 +2099,7 @@ func (a *VulkanApp) recordCommandBuffer(cb vulkan.CommandBuffer, imageIndex int)
 	return nil
 }
 
+// DrawFrame acquires, records, submits, and presents a frame with swapchain-aware sync.
 func (a *VulkanApp) DrawFrame() error {
 	frame := a.currentFrame % maxFramesInFlight
 	if a.debugFrames == 0 {
@@ -2057,6 +2113,7 @@ func (a *VulkanApp) DrawFrame() error {
 		}
 	}
 
+	// Acquire the next swapchain image.
 	var imageIndex uint32
 	res := vulkan.AcquireNextImage(a.device, a.swapchain, vulkan.MaxUint64, a.imageAvailable[frame], vulkan.Fence(vulkan.NullHandle), &imageIndex)
 	if res == vulkan.ErrorOutOfDate {
@@ -2073,6 +2130,7 @@ func (a *VulkanApp) DrawFrame() error {
 		return err
 	}
 
+	// Ensure the image is not in flight before reusing its command buffer.
 	if a.imagesInFlight[imageIndex] != vulkan.Fence(vulkan.NullHandle) {
 		vulkan.WaitForFences(a.device, 1, []vulkan.Fence{a.imagesInFlight[imageIndex]}, vulkan.True, vulkan.MaxUint64)
 	}
@@ -2085,6 +2143,7 @@ func (a *VulkanApp) DrawFrame() error {
 		return err
 	}
 
+	// Submit work and present the image.
 	waitStages := []vulkan.PipelineStageFlags{vulkan.PipelineStageFlags(vulkan.PipelineStageColorAttachmentOutputBit)}
 	submitInfo := vulkan.SubmitInfo{
 		SType:                vulkan.StructureTypeSubmitInfo,
@@ -2128,6 +2187,7 @@ func (a *VulkanApp) DrawFrame() error {
 	return nil
 }
 
+// Cleanup releases all Vulkan resources and the instance/surface.
 func (a *VulkanApp) Cleanup() {
 	vulkan.DeviceWaitIdle(a.device)
 
@@ -2195,6 +2255,7 @@ func (a *VulkanApp) Cleanup() {
 	}
 }
 
+// clamp constrains a value to the provided bounds.
 func clamp(val, min, max uint64) uint64 {
 	if val < min {
 		return min

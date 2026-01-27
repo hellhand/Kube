@@ -9,10 +9,11 @@ import (
 )
 
 func init() {
-	// GLFW/Vulkan require the main thread.
+	// init locks the OS thread because GLFW/Vulkan expect calls from a single thread.
 	runtime.LockOSThread()
 }
 
+// main boots GLFW, creates the window, wires input callbacks, and runs the render loop.
 func main() {
 	if err := glfw.Init(); err != nil {
 		log.Fatalf("init glfw: %v", err)

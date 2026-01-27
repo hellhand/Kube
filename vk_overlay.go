@@ -19,6 +19,7 @@ import (
 	"github.com/vulkan-go/vulkan"
 )
 
+// createOverlayPipeline builds the HUD pipeline for the FPS text overlay.
 func (a *VulkanApp) createOverlayPipeline() error {
 	vertCode, err := os.ReadFile("shaders/overlay_vert.spv")
 	if err != nil {
@@ -185,6 +186,7 @@ func (a *VulkanApp) createOverlayPipeline() error {
 	return nil
 }
 
+// createOverlayBuffers allocates the overlay vertex and indirect draw buffers.
 func (a *VulkanApp) createOverlayBuffers() error {
 	vertexBufferSize := vulkan.DeviceSize(maxOverlayVertices) * vulkan.DeviceSize(unsafe.Sizeof(overlayVertex{}))
 	vb, vbMem, err := a.createBuffer(vertexBufferSize, vulkan.BufferUsageFlags(vulkan.BufferUsageVertexBufferBit), vulkan.MemoryPropertyHostVisibleBit|vulkan.MemoryPropertyHostCoherentBit)
@@ -204,6 +206,7 @@ func (a *VulkanApp) createOverlayBuffers() error {
 	return nil
 }
 
+// updateFPSOverlay rebuilds overlay vertices for the current FPS string and updates buffers.
 func (a *VulkanApp) updateFPSOverlay() error {
 	now := time.Now()
 	a.fpsFrameCount++
@@ -252,6 +255,7 @@ func (a *VulkanApp) updateFPSOverlay() error {
 	return nil
 }
 
+// buildOverlayVertices converts text into overlay quads using a tiny bitmap font.
 func (a *VulkanApp) buildOverlayVertices(text string) []overlayVertex {
 	if a.swapchainExtent.Width == 0 || a.swapchainExtent.Height == 0 {
 		return nil
@@ -290,6 +294,7 @@ func (a *VulkanApp) buildOverlayVertices(text string) []overlayVertex {
 	return verts
 }
 
+// quadToVertices makes two triangles for a quad at pixel coords mapped to NDC.
 func quadToVertices(x, y, w, h float32, color mgl32.Vec3, extent vulkan.Extent2D) []overlayVertex {
 	toNDC := func(px, py float32) mgl32.Vec2 {
 		nx := (px/float32(extent.Width))*2 - 1
@@ -310,6 +315,7 @@ func quadToVertices(x, y, w, h float32, color mgl32.Vec3, extent vulkan.Extent2D
 	}
 }
 
+// glyphPattern returns the bitmap rows for a supported character in the HUD font.
 func glyphPattern(ch rune) []string {
 	font := map[rune][]string{
 		'0': {"111", "101", "101", "101", "111"},

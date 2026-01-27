@@ -17,6 +17,7 @@ import (
 	"github.com/vulkan-go/vulkan"
 )
 
+// createTextureImage uploads the embedded vkcube texture (or fallback) into a sampled image.
 func (a *VulkanApp) createTextureImage() error {
 	texWidth, texHeight, pixels, err := loadVkcubeTexture()
 	if err != nil {
@@ -66,6 +67,7 @@ func (a *VulkanApp) createTextureImage() error {
 	return nil
 }
 
+// createTextureImageView wraps the texture image in a shader-visible color view.
 func (a *VulkanApp) createTextureImageView() error {
 	view, err := a.createImageView(a.textureImage, vulkan.FormatR8g8b8a8Srgb, vulkan.ImageAspectFlags(vulkan.ImageAspectColorBit))
 	if err != nil {
@@ -75,6 +77,7 @@ func (a *VulkanApp) createTextureImageView() error {
 	return nil
 }
 
+// createTextureSampler sets up a repeat, linear-filtered sampler for the cube texture.
 func (a *VulkanApp) createTextureSampler() error {
 	samplerInfo := vulkan.SamplerCreateInfo{
 		SType:                   vulkan.StructureTypeSamplerCreateInfo,
@@ -108,6 +111,7 @@ func (a *VulkanApp) createTextureSampler() error {
 	return nil
 }
 
+// loadVkcubeTexture parses the embedded Lunarg PPM payload into RGBA bytes.
 func loadVkcubeTexture() (uint32, uint32, []byte, error) {
 	if len(lunargPPM) == 0 {
 		return 0, 0, nil, fmt.Errorf("embedded texture payload missing")
@@ -128,6 +132,7 @@ func loadVkcubeTexture() (uint32, uint32, []byte, error) {
 	return w, h, rgba, nil
 }
 
+// parsePPM reads a minimal P6 PPM payload and returns width, height, and RGB data.
 func parsePPM(data []byte) (uint32, uint32, []byte, error) {
 	if len(data) < 3 || data[0] != 'P' || data[1] != '6' {
 		return 0, 0, nil, fmt.Errorf("not a P6 ppm")
@@ -175,6 +180,7 @@ func parsePPM(data []byte) (uint32, uint32, []byte, error) {
 	return uint32(width), uint32(height), pixels[:expected], nil
 }
 
+// fallbackCheckerTexture provides a tiny checkerboard when the embedded texture is missing.
 func fallbackCheckerTexture() (uint32, uint32, []byte) {
 	texWidth, texHeight := uint32(2), uint32(2)
 	pixels := []byte{
@@ -184,6 +190,7 @@ func fallbackCheckerTexture() (uint32, uint32, []byte) {
 	return texWidth, texHeight, pixels
 }
 
+// isSpace reports whether a byte is whitespace for PPM parsing.
 func isSpace(b byte) bool {
 	return b == ' ' || b == '\n' || b == '\r' || b == '\t'
 }
