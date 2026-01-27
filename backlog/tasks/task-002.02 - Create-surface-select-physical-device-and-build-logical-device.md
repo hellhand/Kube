@@ -1,0 +1,24 @@
+---
+id: TASK-002.02
+title: 'Create surface, select physical device, and build logical device'
+status: To Do
+assignee: []
+created_date: '2026-01-27 16:40'
+labels: []
+dependencies:
+  - TASK-002.01
+parent_task_id: TASK-002
+---
+
+## Description
+
+<!-- SECTION:DESCRIPTION:BEGIN -->
+Create the window surface, choose a GPU with graphics+present support, and create the logical device/queues for rendering.
+<!-- SECTION:DESCRIPTION:END -->
+
+## Acceptance Criteria
+<!-- AC:BEGIN -->
+- [ ] #1 Surface created from GLFW window and cleaned up on shutdown.
+- [ ] #2 Physical device selection checks swapchain + graphics/present queue families and prefers discrete GPU when available.
+- [ ] #3 Logical device exposes graphics and present queues; chosen device details logged.
+<!-- AC:END -->
