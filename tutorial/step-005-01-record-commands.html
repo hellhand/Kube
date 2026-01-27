@@ -70,6 +70,18 @@ present := vulkan.PresentInfo{
 }
 vulkan.QueuePresent(a.presentQueue, &present)</code></pre>
   </section>
+  <section>
+    <h2>Notes for beginners</h2>
+    <p><strong>Command buffer reuse.</strong> We allocate one primary command buffer per swapchain image. Before recording, reset it with <code>vkResetCommandBuffer</code> (available because the pool was created with the RESET flag).</p>
+    <p><strong>Stage mask.</strong> The wait stage for the acquire semaphore is <code>COLOR_ATTACHMENT_OUTPUT</code> because the swapchain image is first used as a color attachment; using an earlier stage can trigger validation warnings.</p>
+    <p><strong>Fence order.</strong> Wait on the in-flight fence at the start of the frame, reset it right before <code>QueueSubmit</code>, and let <code>QueueSubmit</code> signal it on completion. This avoids GPU/CPU race conditions when resizing or skipping frames.</p>
+<pre><code class="language-go">// Fence handling around submit
+vulkan.WaitForFences(a.device, 1, []vulkan.Fence{a.inFlightFences[frame]}, vulkan.True, vulkan.MaxUint64)
+vulkan.ResetFences(a.device, 1, []vulkan.Fence{a.inFlightFences[frame]})
+// ... record cmd buffer ...
+vulkan.QueueSubmit(a.graphicsQueue, 1, []vulkan.SubmitInfo{submit}, a.inFlightFences[frame])</code></pre>
+    <p>If you see “out of date” or “suboptimal” on present, recreate the swapchain (next step) and keep the same submission pattern.</p>
+  </section>
   <div class="nav"><a href="index.html">← Back to Hub</a> <a href="step-005-02-resize-recreate.html">Next →</a></div>
 </main>
 </body>

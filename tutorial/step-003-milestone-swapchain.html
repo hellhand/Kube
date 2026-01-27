@@ -38,6 +38,22 @@
       <li>Per-frame semaphores and fences for acquire/submit/present.</li>
     </ul>
   </section>
+  <section>
+    <h2>Validation-friendly run checklist</h2>
+    <p>Use this to confirm the milestone:</p>
+    <ol>
+      <li>Run <code>go run .</code> and ensure the window clears to the configured color (green later) with no validation errors.</li>
+      <li>Look for logs: <em>“validation layers not available; continuing without them”</em> is acceptable; anything else should be fixed before proceeding.</li>
+      <li>Resize the window—swapchain recreation should happen automatically without flicker or crashes.</li>
+      <li>Quit with ESC and confirm resources are destroyed (no lingering validation messages after exit).</li>
+    </ol>
+<pre><code class="language-go">// Minimal render loop skeleton after this milestone
+for !a.window.ShouldClose() {
+  a.drawFrame() // acquires, records clear, submits, presents
+}
+vulkan.DeviceWaitIdle(a.device)</code></pre>
+    <p>If any of these steps fail, revisit swapchain formats, depth creation, and sync wiring before adding the pipeline in the next milestone.</p>
+  </section>
   <div class="nav"><a href="index.html">← Back to Hub</a> <a href="step-003-01-swapchain-depth.html">Next →</a></div>
 </main>
 </body>

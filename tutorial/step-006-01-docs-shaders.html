@@ -29,6 +29,31 @@ glslc shaders/overlay.frag -o shaders/overlay_frag.spv
 </code></pre>
     <p>Provide a script/Makefile target to run these commands and fail on error.</p>
   </section>
+  <section>
+    <h2>Example Make target</h2>
+<pre><code class="language-make">SHADERS = shaders/vert.spv shaders/frag.spv shaders/overlay_vert.spv shaders/overlay_frag.spv
+
+%.spv: %.vert
+	glslc $&lt; -o $@
+
+%.spv: %.frag
+	glslc $&lt; -o $@
+
+.PHONY: shaders
+shaders: $(SHADERS)</code></pre>
+    <p>Add a short <code>docs/build.md</code> entry describing these commands so readers know they must regenerate SPIR-V whenever GLSL changes.</p>
+<pre><code>## Building
+go build ./...
+
+## Running
+VK_VALIDATION=1 go run .
+# Controls: ESC exits, SPACE pauses rotation, (later) overlay shows FPS
+
+## Shaders
+make shaders  # runs glslc for all shader pairs
+</code></pre>
+    <p>Being explicit about tooling versions (<code>glslc --version</code>) helps future contributors reproduce builds.</p>
+  </section>
   <div class="nav"><a href="index.html">← Back to Hub</a> <a href="step-006-02-smoke-validation.html">Next →</a></div>
 </main>
 </body>

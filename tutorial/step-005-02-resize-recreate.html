@@ -45,6 +45,17 @@ if err := a.allocateCommandBuffers(); err != nil { return err }
 a.imagesInFlight = make([]vulkan.Fence, len(a.swapchainImages))
 a.framebufferResized = false</code></pre>
   </section>
+  <section>
+    <h2>Practical notes</h2>
+    <p><strong>Avoid zero-sized swapchains.</strong> If the framebuffer is 0×0 (window minimized), block in <code>glfw.WaitEvents()</code> until a positive size is reported, then recreate. Building a swapchain with extent 0 fails on many drivers.</p>
+<pre><code class="language-go">for {
+  w, h := a.window.GetFramebufferSize()
+  if w > 0 && h > 0 { break }
+  glfw.WaitEvents()
+}</code></pre>
+    <p><strong>Keep cleanup symmetrical.</strong> Anything created after the previous <code>DeviceWaitIdle</code> should be destroyed in <code>cleanupSwapchain</code>. That includes descriptor pools, pipelines (both cube and overlay), and command buffers.</p>
+    <p><strong>Images-in-flight reset.</strong> After recreation, the old fences refer to destroyed swapchain images. Recreate the tracking slice to avoid waiting on stale fences.</p>
+  </section>
   <div class="nav"><a href="index.html">← Back to Hub</a> <a href="step-006-milestone-packaging.html">Next →</a></div>
 </main>
 </body>

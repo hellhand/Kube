@@ -60,6 +60,28 @@ if res := vulkan.CreateInstance(&createInfo, nil, &a.instance); res != vulkan.Su
       <li>Call <code>vulkan.InitInstance(a.instance)</code> to load instance-level function pointers.</li>
     </ol>
   </section>
+  <section>
+    <h2>Deeper explanation</h2>
+    <p><strong>Why the custom <code>cString</code>?</strong> Passing Go-managed strings directly to C can trigger <em>Go pointer to Go pointer</em> panics. The helper allocates a C string, then mirrors it as a Go string header so Vulkan sees a stable address.</p>
+<pre><code class="language-go">// Debug messenger setup (safe even without layers)
+if len(validationLayers) > 0 {
+  dbgCreate := vulkan.DebugUtilsMessengerCreateInfoEXT{
+    SType: vulkan.StructureTypeDebugUtilsMessengerCreateInfoEXT,
+    MessageSeverity: vulkan.DebugUtilsMessageSeverityWarningBitEXT |
+                     vulkan.DebugUtilsMessageSeverityErrorBitEXT |
+                     vulkan.DebugUtilsMessageSeverityVerboseBitEXT,
+    MessageType: vulkan.DebugUtilsMessageTypeGeneralBitEXT |
+                 vulkan.DebugUtilsMessageTypeValidationBitEXT |
+                 vulkan.DebugUtilsMessageTypePerformanceBitEXT,
+    PfnUserCallback: debugCallback, // defined in vk_app.go, logs to stdlib log
+  }
+  if res := vulkan.CreateDebugUtilsMessengerEXT(a.instance, &dbgCreate, nil, &a.debugMessenger); res != vulkan.Success {
+    log.Printf("debug messenger install skipped: %v", res)
+  }
+}</code></pre>
+    <p><strong>Order of operations:</strong> create the instance <em>first</em>, then call <code>vulkan.InitInstance</code>, then install the debug messenger. This guarantees that the extension entry points are loaded before being used.</p>
+    <p>If validation layers are missing, the code gracefully skips them and continues with a warning. That behavior mirrors the runtime logs you’ll see in the CLI output.</p>
+  </section>
   <div class="nav"><a href="index.html">← Back to Hub</a> <a href="step-002-02-surface-device.html">Next →</a></div>
 </main>
 </body>

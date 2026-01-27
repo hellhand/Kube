@@ -97,6 +97,24 @@ writeSampler := vulkan.WriteDescriptorSet{
 }
 vulkan.UpdateDescriptorSets(a.device, 2, []vulkan.WriteDescriptorSet{writeUBO, writeSampler}, 0, nil)</code></pre>
   </section>
+  <section>
+    <h2>Extra guidance</h2>
+    <p><strong>Picking memory types.</strong> The helper <code>createBuffer</code> walks <code>vkGetPhysicalDeviceMemoryProperties</code> to find a memory type that satisfies flags (e.g., HOST_VISIBLE | HOST_COHERENT for CPU-updated data; DEVICE_LOCAL for GPU-only data). Reuse that helper for vertex, index, and uniform buffers.</p>
+<pre><code class="language-go">func (a *VulkanApp) createBuffer(size vulkan.DeviceSize, usage vulkan.BufferUsageFlags, props vulkan.MemoryPropertyFlags) (vulkan.Buffer, vulkan.DeviceMemory, error) {
+  bufInfo := vulkan.BufferCreateInfo{SType: vulkan.StructureTypeBufferCreateInfo, Size: size, Usage: usage, SharingMode: vulkan.SharingModeExclusive}
+  var buf vulkan.Buffer
+  vulkan.CreateBuffer(a.device, &bufInfo, nil, &buf)
+  var memReq vulkan.MemoryRequirements
+  vulkan.GetBufferMemoryRequirements(a.device, buf, &memReq)
+  memType := a.findMemoryType(memReq.MemoryTypeBits, props)
+  alloc := vulkan.MemoryAllocateInfo{SType: vulkan.StructureTypeMemoryAllocateInfo, AllocationSize: memReq.Size, MemoryTypeIndex: memType}
+  var mem vulkan.DeviceMemory
+  vulkan.AllocateMemory(a.device, &alloc, nil, &mem)
+  vulkan.BindBufferMemory(a.device, buf, mem, 0)
+  return buf, mem, nil
+}</code></pre>
+    <p><strong>Descriptor pool sizing.</strong> The pool must cover <em>per swapchain image</em> UBO and sampler descriptors. For N swapchain images, set pool sizes to N for both <code>UNIFORM_BUFFER</code> and <code>COMBINED_IMAGE_SAMPLER</code>, and allocate N descriptor sets from that pool. This prevents allocation failures when resizing the window.</p>
+  </section>
   <div class="nav"><a href="index.html">← Back to Hub</a> <a href="step-005-milestone-render-loop.html">Next →</a></div>
 </main>
 </body>

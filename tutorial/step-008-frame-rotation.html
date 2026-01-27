@@ -36,6 +36,15 @@ model := mgl32.HomogRotate3D(spinZ, mgl32.Vec3{0,0,1})
     <p>Increment in draw loop:</p>
 <pre><code class="language-go">if !a.paused { a.debugFrames++ }</code></pre>
   </section>
+  <section>
+    <h2>Why frame-based rotation?</h2>
+    <p>Coupling rotation to frames (not time) guarantees deterministic orientation for screenshots and comparisons to vkcube. If your GPU is faster, the cube spins faster; to smooth it, scale <code>degPerFrame</code> down until it visually matches vkcube on your machine.</p>
+    <p>For very high FPS, combine frame count with a divisor:</p>
+<pre><code class="language-go">degPerFrame := 45.0 / 120.0 // slower spin
+spinY := float32(a.debugFrames) * mgl32.DegToRad(degPerFrame)
+model := mgl32.HomogRotate3DY(spinY)</code></pre>
+    <p>Because the frame counter is integral, pausing simply stops increments; resuming continues smoothly from the same angle.</p>
+  </section>
   <div class="nav"><a href="index.html">← Back to Hub</a> <a href="step-009-fps-overlay.html">Next →</a></div>
 </main>
 </body>

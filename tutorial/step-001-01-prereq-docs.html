@@ -36,6 +36,24 @@ Validation:
   VK_VALIDATION=0 go run .
 </code></pre>
   </section>
+  <section>
+    <h2>Walkthrough for beginners</h2>
+    <p>Open <code>docs/prerequisites.md</code> (or a similar note) and paste a short checklist the whole team can run before coding. Spell out the intent of each command so readers know why they run it.</p>
+<pre><code># docs/prerequisites.md (excerpt)
+## Vulkan runtime
+vulkaninfo | head -n 15   # confirms ICD and driver are installed
+
+## GLSL compiler
+glslc --version           # prints the bundled shaderc version
+
+## Go toolchain
+go version                # confirm 1.25.x in this repo
+
+## Optional: validation toggle used by the app
+# export VK_VALIDATION=0   # disable if your driver lacks layers
+</code></pre>
+    <p>Why it matters: if any of these fail, the later Vulkan calls (instance creation, swapchain creation) will crash or report missing extensions. Capture the exact error messages in the doc so others can diagnose quickly.</p>
+  </section>
   <div class="nav"><a href="index.html">← Back to Hub</a> <a href="step-001-02-baseline-window.html">Next →</a></div>
 </main>
 </body>

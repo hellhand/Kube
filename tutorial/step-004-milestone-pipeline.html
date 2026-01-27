@@ -33,6 +33,17 @@
       <li>Pipeline state: vertex input (pos/color/uv), triangle list, viewport/scissor = swapchain extent, cull OFF, depth ON, blend OFF.</li>
     </ul>
   </section>
+  <section>
+    <h2>What success looks like</h2>
+    <p>After this milestone, you should be able to record command buffers that bind the pipeline and draw indexed geometry without validation errors. The output is still a solid color until we add vertex data in the next step.</p>
+<pre><code class="language-go">vulkan.CmdBindPipeline(cmd, vulkan.PipelineBindPointGraphics, a.graphicsPipeline)
+vulkan.CmdBindDescriptorSets(cmd, vulkan.PipelineBindPointGraphics, a.pipelineLayout, 0,
+  []vulkan.DescriptorSet{a.descriptorSets[imgIndex]}, nil)
+vulkan.CmdBindVertexBuffers(cmd, 0, 1, []vulkan.Buffer{a.vertexBuffer}, []vulkan.DeviceSize{0})
+vulkan.CmdBindIndexBuffer(cmd, a.indexBuffer, 0, vulkan.IndexTypeUint32)
+vulkan.CmdDrawIndexed(cmd, uint32(len(cubeIndices)), 1, 0, 0, 0)</code></pre>
+    <p>If the command above records and submits without triggering validation, the pipeline wiring is correct and you are ready for geometry and textures.</p>
+  </section>
   <div class="nav"><a href="index.html">← Back to Hub</a> <a href="step-004-01-shaders-pipeline.html">Next →</a></div>
 </main>
 </body>

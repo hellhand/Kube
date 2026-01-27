@@ -28,6 +28,17 @@
 enableValidation := (val == "" || val == "1")
 log.Printf("GPU: %s, swapchain: %v, validation: %v", gpuName, surfaceFormat.Format, enableValidation)</code></pre>
   </section>
+  <section>
+    <h2>Example smoke-mode entrypoint</h2>
+<pre><code class="language-go">if flag.Bool("smoke", false, "init and render one frame") != nil && *smoke {
+  app, err := newVulkanApp(window)
+  if err != nil { log.Fatal(err) }
+  if err := app.drawFrame(); err != nil { log.Fatal(err) }
+  vulkan.DeviceWaitIdle(app.device)
+  return
+}</code></pre>
+    <p>Hook this into CI to catch regressions in device creation, swapchain creation, or pipeline state as early as possible.</p>
+  </section>
   <div class="nav"><a href="index.html">← Back to Hub</a> <a href="step-007-texturing-parity.html">Next →</a></div>
 </main>
 </body>

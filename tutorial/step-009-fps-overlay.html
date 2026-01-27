@@ -97,6 +97,19 @@ return []overlayVertex{
       <li>Bind overlay pipeline and vertex buffer; <code>vkCmdDrawIndirect</code> for the overlay.</li>
     </ol>
   </section>
+  <section>
+    <h2>Extra tips</h2>
+    <p><strong>Pipeline separation.</strong> The overlay pipeline uses no depth and a simpler vertex format; keep it in its own layout/pipeline so you don’t accidentally change cube state.</p>
+    <p><strong>Synchronization.</strong> The overlay uses the same command buffer and subpass as the cube; no extra semaphores are needed. Just ensure the overlay draw happens after the cube draw in the command buffer.</p>
+    <p><strong>Origin.</strong> Characters are built in pixel space with (0,0) in the top-left for readability, then remapped to NDC. Adjust <code>overlayPadding</code> to move the text inward if it touches the border after resize.</p>
+<pre><code class="language-go">func (a *VulkanApp) recordOverlay(cmd vulkan.CommandBuffer, extent vulkan.Extent2D) {
+  vulkan.CmdBindPipeline(cmd, vulkan.PipelineBindPointGraphics, a.overlayPipeline)
+  offset := []vulkan.DeviceSize{0}
+  vulkan.CmdBindVertexBuffers(cmd, 0, 1, []vulkan.Buffer{a.overlayVertexBuffer}, offset)
+  vulkan.CmdDrawIndirect(cmd, a.overlayIndirectBuffer, 0, 1, uint32(unsafe.Sizeof(vulkan.DrawIndirectCommand{})))
+}</code></pre>
+    <p>Run with validation on once after adding the overlay—incorrect vertex strides or attribute offsets are common mistakes that validation can catch.</p>
+  </section>
   <div class="nav"><a href="index.html">← Back to Hub</a> <a href="step-010-split-modules.html">Next →</a></div>
 </main>
 </body>

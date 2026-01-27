@@ -88,6 +88,25 @@ cubeIndices := []uint32{
       <li>SPACE toggles rotation pause.</li>
     </ul>
   </section>
+  <section>
+    <h2>Step-by-step texture upload</h2>
+    <p><strong>Why staging?</strong> Most GPUs cannot write directly to device-local optimal images from the CPU. We upload to a host-visible staging buffer, then copy to the image with a command buffer.</p>
+<pre><code class="language-go">stageBuf, stageMem, _ := a.createBuffer(vulkan.DeviceSize(len(pixels)),
+  vulkan.BufferUsageFlags(vulkan.BufferUsageTransferSrcBit),
+  vulkan.MemoryPropertyHostVisibleBit|vulkan.MemoryPropertyHostCoherentBit)
+// map, copy pixels, unmap
+a.transitionImageLayout(a.textureImage, fmt, vulkan.ImageLayoutUndefined, vulkan.ImageLayoutTransferDstOptimal)
+a.copyBufferToImage(stageBuf, a.textureImage, texW, texH)
+a.transitionImageLayout(a.textureImage, fmt, vulkan.ImageLayoutTransferDstOptimal, vulkan.ImageLayoutShaderReadOnlyOptimal)</code></pre>
+    <p><strong>Sampler and UVs.</strong> Repeat mode avoids seams on the vkcube texture; linear filtering keeps the logo smooth. Per-face UVs ensure each face shows the Lunarg logo upright.</p>
+  </section>
+  <section>
+    <h2>Background clear color</h2>
+<pre><code class="language-go">a.clearColor = vulkan.NewClearValue([]float32{0.15, 0.35, 0.15, 1.0})
+// Used inside the render pass begin info for the color attachment
+</code></pre>
+    <p>Match this to vkcube for visual parity; seeing the green makes it obvious when the swapchain is presenting correctly.</p>
+  </section>
   <div class="nav"><a href="index.html">← Back to Hub</a> <a href="step-008-frame-rotation.html">Next →</a></div>
 </main>
 </body>

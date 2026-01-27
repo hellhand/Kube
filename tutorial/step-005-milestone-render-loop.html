@@ -1,5 +1,5 @@
 <!doctype html>
-html lang="en">
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <title>Task 005 – Render Loop & Resize Milestone</title>
@@ -36,6 +36,22 @@ html lang="en">
       <li>Update UBO per frame (rotation), submit, present with semaphores/fences.</li>
       <li>Detect resize/out-of-date and recreate swapchain-dependent resources safely.</li>
     </ul>
+  </section>
+  <section>
+    <h2>How to verify</h2>
+    <p>Run the app and confirm:</p>
+    <ol>
+      <li>The cube spins smoothly and depth test hides back faces correctly.</li>
+      <li>Resizing the window briefly pauses, then resumes drawing without crashes.</li>
+      <li>ESC exits cleanly with no validation errors printed after shutdown.</li>
+    </ol>
+<pre><code class="language-go">// UBO update that drives rotation
+angle := float32(a.debugFrames) * 0.01
+ubo.Model = mgl32.HomogRotate3DY(angle)
+ubo.View  = mgl32.LookAtV(mgl32.Vec3{2,2,2}, mgl32.Vec3{0,0,0}, mgl32.Vec3{0,0,1})
+ubo.Proj  = mgl32.Perspective(mgl32.DegToRad(45), aspect, 0.1, 10.0)
+ubo.Proj[1][1] *= -1 // flip Y for Vulkan clip space</code></pre>
+    <p>If these conditions hold, the render loop is healthy for the remaining features (textures, overlay, input controls).</p>
   </section>
   <div class="nav"><a href="index.html">← Back to Hub</a> <a href="step-005-01-record-commands.html">Next →</a></div>
 </main>

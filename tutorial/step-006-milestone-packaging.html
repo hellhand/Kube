@@ -34,6 +34,16 @@ VK_VALIDATION=0 go run .   # disable validation if needed
       <li>Smoke-check flow: start app, render cube/overlay, exit cleanly (ESC).</li>
     </ul>
   </section>
+  <section>
+    <h2>Verification script example</h2>
+<pre><code class="language-bash">#!/usr/bin/env bash
+set -euo pipefail
+go build ./...
+make shaders     # or invoke glslc lines manually
+VK_VALIDATION=0 go run . --smoke
+echo "Smoke OK"</code></pre>
+    <p>Drop this into <code>scripts/smoke.sh</code> and reference it in the docs so contributors have a single, reliable entry point to test changes.</p>
+  </section>
   <div class="nav"><a href="index.html">← Back to Hub</a> <a href="step-006-01-docs-shaders.html">Next →</a></div>
 </main>
 </body>

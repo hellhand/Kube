@@ -78,6 +78,21 @@ vulkan.GetDeviceQueue(a.device, presentIndex, 0, &a.presentQueue)</code></pre>
 <pre><code>go run .
 # Should log instance/device created and exit (no drawing yet).</code></pre>
   </section>
+  <section>
+    <h2>Deep dive notes</h2>
+    <p><strong>Binding Vulkan to GLFW.</strong> The very first Vulkan call should be <code>vulkan.SetGetInstanceProcAddr(glfw.GetVulkanGetInstanceProcAddress())</code> followed by <code>vulkan.Init()</code>. This wires the loader to GLFW’s function resolver so the binding can fetch extension entry points.</p>
+    <p><strong>Graceful validation fallback.</strong> Wrap the layer request in a helper that checks availability. If missing, log <em>“validation layers not available; continuing without them”</em> and proceed. This mirrors the runtime logs you may already have seen.</p>
+    <p><strong>Queue ownership.</strong> Store <code>graphicsQueue</code> and <code>presentQueue</code> directly on the app struct. Future steps (command submission, presentation) read from there to avoid re-querying.</p>
+<pre><code class="language-go">type VulkanApp struct {
+  instance vulkan.Instance
+  surface  vulkan.Surface
+  device   vulkan.Device
+  graphicsQueue vulkan.Queue
+  presentQueue  vulkan.Queue
+  // ...
+}</code></pre>
+    <p>When the above fields are populated and the program exits cleanly, you’ve hit the milestone.</p>
+  </section>
   <div class="nav"><a href="index.html">← Back to Hub</a> <a href="step-002-01-instance-validation.html">Next →</a></div>
 </main>
 </body>

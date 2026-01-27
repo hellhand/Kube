@@ -65,6 +65,23 @@ func main() {
 </code></pre>
     <p>You should see an empty window that closes on ESC. No Vulkan yet.</p>
   </section>
+  <section>
+    <h2>4) What each call does (expanded)</h2>
+    <p>This tiny loop is the backbone for the rest of the tutorial. Understand each line before adding Vulkan:</p>
+    <ul>
+      <li><code>runtime.LockOSThread()</code>: Vulkan and GLFW expect API calls from one thread; locking now prevents subtle crashes later.</li>
+      <li><code>glfw.WindowHint(glfw.ClientAPI, glfw.NoAPI)</code>: ensures GLFW does not create an OpenGL context.</li>
+      <li>Framebuffer wait loop: on some WMs the framebuffer is 0×0 until the window is shown; the loop avoids creating a zero-sized swapchain.</li>
+      <li>Key callback: ESC closes; later we also hook SPACE to pause rotation.</li>
+      <li>Main loop: <code>PollEvents()</code> keeps the window responsive; the tiny sleep keeps CPU usage reasonable before we start rendering.</li>
+    </ul>
+<pre><code class="language-go">// Minimal loop you can copy into other experiments
+for !win.ShouldClose() {
+  glfw.PollEvents()
+  // (render happens in later steps)
+}</code></pre>
+    <p>If something breaks later, comment out all Vulkan and return to this loop to confirm window creation still works.</p>
+  </section>
   <div class="nav"><a href="index.html">← Back to Hub</a> <a href="step-002-milestone-instance.html">Next →</a></div>
 </main>
 </body>

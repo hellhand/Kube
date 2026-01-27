@@ -33,6 +33,26 @@ vk_app.go       # core orchestration, draw loop, cleanup
 vk_texture.go   # texture loading, image/view/sampler
 vk_overlay.go   # HUD pipeline, buffers, FPS text</code></pre>
   </section>
+  <section>
+    <h2>How to do it safely</h2>
+    <ol>
+      <li>Identify cohesive groups: texture helpers (<code>createImage</code>, <code>transitionImageLayout</code>, PPM parsing) move together; overlay helpers (bitmap font, overlay buffers) move together.</li>
+      <li>Keep shared types (<code>VulkanApp</code>, <code>vertex</code>, <code>uniformBufferObject</code>) in one file to avoid import cycles.</li>
+      <li>After moving functions, search for <code>TODO:</code> or compilation errors and fix missing method receivers or imports.</li>
+      <li>Re-run swapchain recreation and cleanup paths to ensure all new files still export the needed functions.</li>
+    </ol>
+<pre><code class="language-go">// Example: keep shared types central
+// vk_app.go
+type VulkanApp struct {
+  // ...
+  textureImage vulkan.Image
+  overlayPipeline vulkan.Pipeline
+}
+
+// vk_texture.go (same package main, so these have method receivers)
+func (a *VulkanApp) createTextureResources() error { /* ... */ }</code></pre>
+    <p>Commit after the split once <code>go run .</code> still produces the textured cube with overlay.</p>
+  </section>
   <div class="nav"><a href="index.html">← Back to Hub</a></div>
 </main>
 </body>

@@ -38,6 +38,25 @@ go version</code></pre>
     <h2>Why this matters</h2>
     <p>All later steps assume Vulkan initializes cleanly and shaders can be compiled. Fixing drivers early saves time.</p>
   </section>
+  <section>
+    <h2>Detailed checklist</h2>
+    <p>Run each of these once and paste the output into your notes so teammates can compare results.</p>
+<pre><code># GPU + ICD detection
+vulkaninfo | head -n 25
+
+# Shader compiler
+glslc --version
+
+# Go + cgo toolchain
+go env GOPATH GOROOT CGO_ENABLED CC CXX
+
+# Distro packages (Ubuntu/Debian example)
+sudo apt-get install libvulkan-dev vulkan-utils mesa-vulkan-drivers \
+  libx11-dev libxcursor-dev libxrandr-dev libxinerama-dev libxi-dev \
+  libglfw3-dev libxxf86vm-dev
+</code></pre>
+    <p>If any command fails, fix it before advancing. Vulkan issues cascade and are much harder to diagnose once swapchains and pipelines enter the picture.</p>
+  </section>
   <div class="nav"><a href="index.html">← Back to Hub</a> <a href="step-001-01-prereq-docs.html">Next →</a></div>
 </main>
 </body>

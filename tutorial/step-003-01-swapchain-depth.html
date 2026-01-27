@@ -19,6 +19,7 @@
       <li>Extent: clamp to surface caps; if current extent is 0, wait until framebuffer has size.</li>
       <li>Image count: min+1, capped by max image count if provided.</li>
     </ul>
+    <p>The swapchain describes how images are queued for presentation. Picking SRGB ensures correct color space; FIFO guarantees vsync-friendly behavior.</p>
 <pre><code class="language-go">extent := surfaceCaps.CurrentExtent
 if extent.Width == 0 || extent.Height == 0 {
   // wait in app loop until framebuffer size is non-zero
@@ -34,6 +35,7 @@ if surfaceCaps.MaxImageCount > 0 && imageCount > surfaceCaps.MaxImageCount {
       <li>Create the swapchain with sharing mode (exclusive unless graphics/present differ).</li>
       <li>Fetch images via <code>GetSwapchainImages</code> and create <code>VkImageView</code> for each with color aspect.</li>
     </ul>
+    <p>Image views describe how shaders see the images. For the swapchain, each image needs a view to attach to the render pass.</p>
 <pre><code class="language-go">createInfo := vulkan.SwapchainCreateInfo{
   SType:            vulkan.StructureTypeSwapchainCreateInfo,
   Surface:          a.surface,
@@ -66,6 +68,7 @@ for _, img := range imgs {
       <li>Create an image (width=extent.W, height=extent.H, 1 mip, 1 layer, optimal tiling, usage DEPTH_STENCIL_ATTACHMENT).</li>
       <li>Allocate device-local memory, bind, and create a depth view (aspect depth).</li>
     </ul>
+    <p>Depth is essential so closer fragments hide farther ones. The depth image matches swapchain size; its layout is used in the render pass.</p>
 <pre><code class="language-go">depthFormat := pickDepthFormat()
 img, mem, _ := a.createImage(extent.Width, extent.Height, depthFormat,
   vulkan.ImageTilingOptimal,
@@ -88,6 +91,10 @@ a.depthImage, a.depthImageMemory, a.depthImageView = img, mem, view</code></pre>
   }
   return vulkan.FormatD32Sfloat
 }</code></pre>
+  </section>
+  <section>
+    <h2>Resize considerations</h2>
+    <p>When the window is minimized the framebuffer size is 0×0. Delay swapchain creation until <code>glfw.GetFramebufferSize</code> reports a non-zero size, otherwise <code>vkCreateSwapchainKHR</code> can fail. On resize/out-of-date, destroy depth resources along with the swapchain and recreate them with the new extent.</p>
   </section>
   <div class="nav"><a href="index.html">← Back to Hub</a> <a href="step-003-02-renderpass-framebuffers.html">Next →</a></div>
 </main>

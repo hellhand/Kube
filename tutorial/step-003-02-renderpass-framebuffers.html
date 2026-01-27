@@ -104,6 +104,29 @@ rpInfo := vulkan.RenderPassBeginInfo{ /* assign framebuffer, area, clears */ }
 // Record CB: BeginRenderPass -> (later bind pipeline/draw) -> EndRenderPass
 </code></pre>
   </section>
+  <section>
+    <h2>Detailed walkthrough</h2>
+    <p><strong>Render pass layout.</strong> We clear both attachments at load time, store color (so it can be presented), and discard depth (no one reads it later). Final layouts match how the images are used after the render pass: color goes to <code>PRESENT_SRC</code>, depth stays in <code>DEPTH_STENCIL_ATTACHMENT_OPTIMAL</code>.</p>
+<pre><code class="language-go">subpass := vulkan.SubpassDescription{
+  PipelineBindPoint: vulkan.PipelineBindPointGraphics,
+  ColorAttachmentCount: 1,
+  PColorAttachments: []vulkan.AttachmentReference{{
+    Attachment: 0, Layout: vulkan.ImageLayoutColorAttachmentOptimal,
+  }},
+  PDepthStencilAttachment: &vulkan.AttachmentReference{
+    Attachment: 1, Layout: vulkan.ImageLayoutDepthStencilAttachmentOptimal,
+  },
+}</code></pre>
+    <p><strong>Command buffer contents.</strong> Recording for a single image looks like:</p>
+<pre><code class="language-go">vulkan.BeginCommandBuffer(cmd, &vulkan.CommandBufferBeginInfo{
+  SType: vulkan.StructureTypeCommandBufferBeginInfo,
+})
+vulkan.CmdBeginRenderPass(cmd, &rpInfo, vulkan.SubpassContentsInline)
+// later: bind pipeline, vertex/index buffers, descriptor sets
+vulkan.CmdEndRenderPass(cmd)
+vulkan.EndCommandBuffer(cmd)</code></pre>
+    <p><strong>Sync timeline.</strong> Wait on the per-frame fence before reusing a command buffer. After <code>vkAcquireNextImageKHR</code>, signal <code>imageAvailable</code>; submit the command buffer waiting on that semaphore, then signal <code>renderFinished</code>. Present waits on <code>renderFinished</code>. The in-flight fence is signaled when the GPU finishes the submission.</p>
+  </section>
   <div class="nav"><a href="index.html">← Back to Hub</a> <a href="step-004-milestone-pipeline.html">Next →</a></div>
 </main>
 </body>

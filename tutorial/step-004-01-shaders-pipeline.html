@@ -74,6 +74,40 @@ layoutInfo := vulkan.PipelineLayoutCreateInfo{
 // Create pipeline layout, then GraphicsPipelineCreateInfo with vertex/raster/depth/blend/viewport states, render pass, subpass=0.
 </code></pre>
   </section>
+  <section>
+    <h2>Deeper explanation with state structs</h2>
+    <p>Each fixed-function stage is a small struct. Seeing them together makes the pipeline less mysterious.</p>
+<pre><code class="language-go">vertexInput := vulkan.PipelineVertexInputStateCreateInfo{
+  SType: vulkan.StructureTypePipelineVertexInputStateCreateInfo,
+  VertexBindingDescriptionCount: 1,
+  PVertexBindingDescriptions: []vulkan.VertexInputBindingDescription{
+    {Binding: 0, Stride: uint32(unsafe.Sizeof(vertex{})), InputRate: vulkan.VertexInputRateVertex},
+  },
+  VertexAttributeDescriptionCount: 3,
+  PVertexAttributeDescriptions: []vulkan.VertexInputAttributeDescription{
+    {Location: 0, Binding: 0, Format: vulkan.FormatR32g32b32Sfloat, Offset: 0},                                  // pos
+    {Location: 1, Binding: 0, Format: vulkan.FormatR32g32b32Sfloat, Offset: 12},                                 // color
+    {Location: 2, Binding: 0, Format: vulkan.FormatR32g32Sfloat,  Offset: 24},                                   // uv
+  },
+}
+inputAssembly := vulkan.PipelineInputAssemblyStateCreateInfo{
+  SType: vulkan.StructureTypePipelineInputAssemblyStateCreateInfo,
+  Topology: vulkan.PrimitiveTopologyTriangleList,
+}
+raster := vulkan.PipelineRasterizationStateCreateInfo{
+  SType: vulkan.StructureTypePipelineRasterizationStateCreateInfo,
+  PolygonMode: vulkan.PolygonModeFill,
+  CullMode: vulkan.CullModeFlags(vulkan.CullModeNone), // keep all cube faces visible
+  FrontFace: vulkan.FrontFaceCounterClockwise,
+}
+depth := vulkan.PipelineDepthStencilStateCreateInfo{
+  SType: vulkan.StructureTypePipelineDepthStencilStateCreateInfo,
+  DepthTestEnable:  vulkan.True,
+  DepthWriteEnable: vulkan.True,
+  DepthCompareOp:   vulkan.CompareOpLess,
+}</code></pre>
+    <p>Combine these pieces in <code>GraphicsPipelineCreateInfo</code> along with viewport/scissor (from swapchain extent), multisampling (1 sample), and color blend (disabled). Keeping the structs explicit makes debugging much easier when you later tweak culling or blending.</p>
+  </section>
   <div class="nav"><a href="index.html">← Back to Hub</a> <a href="step-004-02-buffers-descriptors.html">Next →</a></div>
 </main>
 </body>
