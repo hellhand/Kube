@@ -28,6 +28,13 @@ spinZ := elapsed * mgl32.DegToRad(float32(degPerFrame))
 model := mgl32.HomogRotate3D(spinZ, mgl32.Vec3{0,0,1})
 // increment debugFrames only if !paused
 </code></pre>
+    <p>Pause toggle:</p>
+<pre><code class="language-go">func (a *VulkanApp) togglePause() {
+  if a.paused { a.paused = false; return }
+  a.paused = true
+}</code></pre>
+    <p>Increment in draw loop:</p>
+<pre><code class="language-go">if !a.paused { a.debugFrames++ }</code></pre>
   </section>
   <div class="nav"><a href="index.html">← Back to Hub</a> <a href="step-009-fps-overlay.html">Next →</a></div>
 </main>

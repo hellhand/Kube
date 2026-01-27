@@ -42,6 +42,33 @@ vulkan.CmdEndRenderPass(cb)
       <li>Submit: wait imageAvailable at COLOR_ATTACHMENT_OUTPUT, signal renderFinished.</li>
       <li>Present: wait renderFinished.</li>
     </ol>
+<pre><code class="language-go">// Acquire
+res := vulkan.AcquireNextImage(a.device, a.swapchain, vulkan.MaxUint64,
+  a.imageAvailable[frame], vulkan.Fence(vulkan.NullHandle), &imageIndex)
+// Record command buffer for imageIndex here
+
+waitStages := []vulkan.PipelineStageFlags{vulkan.PipelineStageFlags(vulkan.PipelineStageColorAttachmentOutputBit)}
+submit := vulkan.SubmitInfo{
+  SType:                vulkan.StructureTypeSubmitInfo,
+  WaitSemaphoreCount:   1,
+  PWaitSemaphores:      []vulkan.Semaphore{a.imageAvailable[frame]},
+  PWaitDstStageMask:    waitStages,
+  CommandBufferCount:   1,
+  PCommandBuffers:      []vulkan.CommandBuffer{a.commandBuffers[imageIndex]},
+  SignalSemaphoreCount: 1,
+  PSignalSemaphores:    []vulkan.Semaphore{a.renderFinished[frame]},
+}
+vulkan.QueueSubmit(a.graphicsQueue, 1, []vulkan.SubmitInfo{submit}, a.inFlightFences[frame])
+
+present := vulkan.PresentInfo{
+  SType:              vulkan.StructureTypePresentInfo,
+  WaitSemaphoreCount: 1,
+  PWaitSemaphores:    []vulkan.Semaphore{a.renderFinished[frame]},
+  SwapchainCount:     1,
+  PSwapchains:        []vulkan.Swapchain{a.swapchain},
+  PImageIndices:      []uint32{imageIndex},
+}
+vulkan.QueuePresent(a.presentQueue, &present)</code></pre>
   </section>
   <div class="nav"><a href="index.html">← Back to Hub</a> <a href="step-005-02-resize-recreate.html">Next →</a></div>
 </main>

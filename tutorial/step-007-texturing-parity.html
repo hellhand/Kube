@@ -43,6 +43,19 @@ a.transitionImageLayout(image, vulkan.FormatR8g8b8a8Srgb, vulkan.ImageLayoutTran
 a.textureImage = image
 a.textureImageMemory = memory
 </code></pre>
+    <p>Create sampler:</p>
+<pre><code class="language-go">samplerInfo := vulkan.SamplerCreateInfo{
+  SType: vulkan.StructureTypeSamplerCreateInfo,
+  MagFilter: vulkan.FilterLinear,
+  MinFilter: vulkan.FilterLinear,
+  AddressModeU: vulkan.SamplerAddressModeRepeat,
+  AddressModeV: vulkan.SamplerAddressModeRepeat,
+  AddressModeW: vulkan.SamplerAddressModeRepeat,
+  MipmapMode: vulkan.SamplerMipmapModeLinear,
+}
+var samp vulkan.Sampler
+vulkan.CreateSampler(a.device, &samplerInfo, nil, &samp)
+a.textureSampler = samp</code></pre>
   </section>
   <section>
     <h2>3) Vertex layout & UVs</h2>

@@ -35,6 +35,20 @@ void main() { outColor = vec4(fragColor, 1.0); }
       <li>Culling OFF, depth OFF, blend OFF (opaque).</li>
       <li>Separate pipeline/layout from the main cube pipeline.</li>
     </ul>
+<pre><code class="language-go">binding := vulkan.VertexInputBindingDescription{
+  Binding: 0, Stride: uint32(unsafe.Sizeof(overlayVertex{})),
+  InputRate: vulkan.VertexInputRateVertex,
+}
+attrs := []vulkan.VertexInputAttributeDescription{
+  {Location:0, Binding:0, Format: vulkan.FormatR32g32Sfloat, Offset: uint32(unsafe.Offsetof(overlayVertex{}.pos))},
+  {Location:1, Binding:0, Format: vulkan.FormatR32g32b32Sfloat, Offset: uint32(unsafe.Offsetof(overlayVertex{}.color))},
+}
+depthStencil := vulkan.PipelineDepthStencilStateCreateInfo{
+  SType: vulkan.StructureTypePipelineDepthStencilStateCreateInfo,
+  DepthTestEnable: vulkan.False,
+  DepthWriteEnable: vulkan.False,
+  DepthCompareOp: vulkan.CompareOpAlways,
+}</code></pre>
   </section>
   <section>
     <h2>Data generation</h2>

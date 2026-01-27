@@ -46,6 +46,17 @@ a.vertexBuffer, a.vertexBufferMemory = buf, mem</code></pre>
   View  mgl32.Mat4
   Proj  mgl32.Mat4
 }</code></pre>
+    <p>Update per frame (host-visible mapping):</p>
+<pre><code class="language-go">ubo := uniformBufferObject{Model: model, View: view, Proj: proj}
+size := vulkan.DeviceSize(unsafe.Sizeof(ubo))
+var data unsafe.Pointer
+if res := vulkan.MapMemory(a.device, a.uniformBuffersMemory[imageIndex], 0, size, 0, &data); res != vulkan.Success {
+  return fmt.Errorf("map uniform buffer: %w", vulkan.Error(res))
+}
+dst := (*[1<<30]byte)(data)[:size:size]
+src := (*[1<<30]byte)(unsafe.Pointer(&ubo))[:size:size]
+copy(dst, src)
+vulkan.UnmapMemory(a.device, a.uniformBuffersMemory[imageIndex])</code></pre>
     <ul>
       <li>Allocate one UBO per swapchain image (host-visible, coherent).</li>
       <li>Update each frame with model/view/proj matrices.</li>
