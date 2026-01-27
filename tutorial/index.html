@@ -1,0 +1,295 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Kube Vulkan vkcube Clone – Full Build Tutorial</title>
+  <style>
+    :root {
+      --bg: #0b1116;
+      --panel: #101820;
+      --accent: #65d18f;
+      --accent-2: #53b6ff;
+      --text: #dce6f2;
+      --muted: #94a8c6;
+      --mono: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+      --sans: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: radial-gradient(160% 140% at 20% 20%, #12202d, #070c11);
+      color: var(--text);
+      font-family: var(--sans);
+      line-height: 1.6;
+      padding: 32px 24px 64px;
+    }
+    main {
+      max-width: 980px;
+      margin: 0 auto;
+      background: var(--panel);
+      border: 1px solid #1f2b37;
+      border-radius: 18px;
+      box-shadow: 0 30px 80px rgba(0,0,0,0.45);
+      overflow: hidden;
+    }
+    header {
+      padding: 28px 32px 20px;
+      background: linear-gradient(145deg, rgba(101,209,143,0.18), rgba(83,182,255,0.12));
+      border-bottom: 1px solid #1f2b37;
+    }
+    h1 { margin: 0 0 8px; font-size: 28px; letter-spacing: 0.5px; }
+    .lead { color: var(--muted); margin: 0; }
+    section { padding: 26px 32px; border-bottom: 1px solid #141c25; }
+    section:last-of-type { border-bottom: 0; }
+    h2 { margin: 0 0 12px; font-size: 22px; }
+    h3 { margin: 22px 0 8px; font-size: 18px; }
+    p { margin: 8px 0 12px; }
+    code, pre { font-family: var(--mono); }
+    pre {
+      background: #0c141b;
+      border: 1px solid #18222c;
+      border-radius: 12px;
+      padding: 14px;
+      overflow: auto;
+      color: #d6f0ff;
+    }
+    .badge {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: rgba(101,209,143,0.16);
+      color: var(--accent);
+      font-size: 12px;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+    ul { padding-left: 18px; }
+    .steps { margin: 10px 0 4px; }
+    .mono { color: var(--accent-2); }
+    a { color: var(--accent-2); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Kube: Building a Vulkan vkcube Clone in Go</h1>
+    <p class="lead">From empty window to textured rotating cube with FPS HUD, frame-based spin, and swapchain-safe lifecycle.</p>
+  </header>
+
+  <section>
+    <div class="badge">Prereqs</div>
+    <p>Install Go 1.24+, Vulkan loader/driver + dev headers (X11/GLFW), and <code>glslc</code>. Verify:</p>
+<pre><code>vulkaninfo | head
+glslc --version
+go version</code></pre>
+    <p>Optional toggles: <code>VK_VALIDATION=0</code> to skip validation layers; otherwise they are requested if present.</p>
+  </section>
+
+  <section>
+    <h2>1) Module & Baseline Window</h2>
+    <p>Create the module and add deps:</p>
+<pre><code>go mod init Kube
+go get github.com/vulkan-go/glfw/v3.3/glfw@v0.0.0-20210402172934-58379a80228d
+go get github.com/vulkan-go/vulkan@v0.0.0-20221209234627-c0a353ae26c8
+go get github.com/go-gl/mathgl/mgl32@v1.2.0
+# optional: replace github.com/vulkan-go/vulkan =&gt; ./third_party/vulkan</code></pre>
+    <p>Baseline window (ESC closes, SPACE will pause rotation later):</p>
+<pre><code class="language-go">package main
+
+import (
+  "log"
+  "runtime"
+  "time"
+  "github.com/vulkan-go/glfw/v3.3/glfw"
+)
+
+func init() { runtime.LockOSThread() }
+
+func main() {
+  if err := glfw.Init(); err != nil { log.Fatalf("init glfw: %v", err) }
+  defer glfw.Terminate()
+
+  glfw.WindowHint(glfw.ClientAPI, glfw.NoAPI)
+  window, err := glfw.CreateWindow(800, 600, "Kube Vulkan", nil, nil)
+  if err != nil { log.Fatalf("create window: %v", err) }
+  defer window.Destroy()
+
+  for { // wait for non-zero framebuffer
+    w, h := window.GetFramebufferSize()
+    if w &gt; 0 && h &gt; 0 { break }
+    glfw.WaitEventsTimeout(0.01)
+  }
+
+  var app *VulkanApp
+  window.SetKeyCallback(func(w *glfw.Window, key glfw.Key, scancode int, action glfw.Action, mods glfw.ModifierKey) {
+    if key == glfw.KeyEscape && action == glfw.Press { w.SetShouldClose(true) }
+    if key == glfw.KeySpace && action == glfw.Press && app != nil { app.togglePause() }
+  })
+
+  app, err = newVulkanApp(window)
+  if err != nil { log.Fatalf("init vulkan: %v", err) }
+  defer app.Cleanup()
+
+  window.SetFramebufferSizeCallback(func(w *glfw.Window, width, height int) {
+    app.requestSwapchainRecreate()
+  })
+
+  for !window.ShouldClose() {
+    glfw.PollEvents()
+    if err := app.DrawFrame(); err != nil { log.Fatalf("draw frame: %v", err) }
+    time.Sleep(1 * time.Millisecond)
+  }
+}</code></pre>
+  </section>
+
+  <section>
+    <h2>2) Instance, Surface, Device</h2>
+    <ul class="steps">
+      <li>Call <code>vulkan.Init()</code>, request <code>VK_LAYER_KHRONOS_validation</code> if present (log and disable otherwise).</li>
+      <li>Create the GLFW surface, pick a physical device with graphics+present and swapchain support (prefer discrete GPU).</li>
+      <li>Create the logical device enabling <code>VK_KHR_swapchain</code>; store graphics/present queues.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>3) Swapchain, Depth, Render Pass, Framebuffers</h2>
+    <ul class="steps">
+      <li>Handle zero extent by waiting; clamp to surface caps; present mode FIFO.</li>
+      <li>Create swapchain image views; depth image in device-local memory (e.g., D32) with depth aspect view.</li>
+      <li>Render pass: color+depth attachments, single subpass; framebuffers per swapchain image.</li>
+      <li>Command pool/buffers sized to swapchain image count; per-frame semaphores+fences.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>4) Cube Geometry & Descriptors</h2>
+    <p>24 vertices (4 per face) for UV-correct texturing; indexed draw.</p>
+<pre><code class="language-go">type vertex struct {
+  pos   mgl32.Vec3
+  color mgl32.Vec3
+  uv    mgl32.Vec2
+}
+// descriptor layout: binding 0 = UBO (vertex), binding 1 = combined image sampler (fragment)
+</code></pre>
+    <p>Create host-visible vertex/index buffers; map/copy data.</p>
+  </section>
+
+  <section>
+    <h2>5) Shaders & Pipeline</h2>
+    <p>Cube shaders:</p>
+<pre><code class="language-glsl">// shaders/cube.vert
+#version 450
+layout(location=0) in vec3 inPos;
+layout(location=1) in vec3 inColor;
+layout(location=2) in vec2 inUV;
+layout(binding=0) uniform UniformBuffer { mat4 model; mat4 view; mat4 proj; } ubo;
+layout(location=0) out vec3 fragColor;
+layout(location=1) out vec2 fragUV;
+void main() {
+    fragColor = inColor;
+    fragUV = inUV;
+    gl_Position = ubo.proj * ubo.view * ubo.model * vec4(inPos, 1.0);
+}</code></pre>
+<pre><code class="language-glsl">// shaders/cube.frag
+#version 450
+layout(location=0) in vec3 fragColor;
+layout(location=1) in vec2 fragUV;
+layout(binding=1) uniform sampler2D texSampler;
+layout(location=0) out vec4 outColor;
+void main() { outColor = texture(texSampler, fragUV); }</code></pre>
+    <p>Compile:</p>
+<pre><code>glslc shaders/cube.vert -o shaders/vert.spv
+glslc shaders/cube.frag -o shaders/frag.spv</code></pre>
+    <p>Pipeline settings:</p>
+    <ul class="steps">
+      <li>Vertex input: binding 0; attrs pos/color/uv.</li>
+      <li>Rasterizer: <strong>cull mode NONE</strong> (faces always visible), front face CCW.</li>
+      <li>Depth test/write: ON (compare LESS); blend: opaque.</li>
+      <li>Viewport/scissor: swapchain extent; render pass subpass 0.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>6) Uniforms & Frame-Based Rotation</h2>
+<pre><code class="language-go">type uniformBufferObject struct {
+  Model mgl32.Mat4
+  View  mgl32.Mat4
+  Proj  mgl32.Mat4
+}</code></pre>
+    <p>Deterministic spin (frame counter):</p>
+<pre><code class="language-go">elapsed := float32(a.debugFrames)
+degPerFrame := 45.0 / 60.0 // 45 deg/sec @ 60 fps
+spinZ := elapsed * mgl32.DegToRad(float32(degPerFrame))
+model := mgl32.HomogRotate3D(spinZ, mgl32.Vec3{0, 0, 1})
+view := mgl32.LookAtV(mgl32.Vec3{3,3,3}, mgl32.Vec3{0,0,0}, mgl32.Vec3{0,0,1})
+proj := mgl32.Perspective(mgl32.DegToRad(45), float32(extent.Width)/float32(extent.Height), 0.1, 10.0)
+proj[5] *= -1
+// increment debugFrames only when not paused (SPACE toggles)
+</code></pre>
+  </section>
+
+  <section>
+    <h2>7) Texturing (vkcube Lunarg)</h2>
+    <p>Embed and load the texture:</p>
+<pre><code class="language-go">// texture_embed.go
+package main
+import _ "embed"
+//go:embed assets/lunarg.ppm
+var lunargPPM []byte
+</code></pre>
+    <p>Parsing and image creation (`vk_texture.go`): convert PPM to RGBA, create image R8G8B8A8 SRGB, transitions UNDEFINED → TRANSFER_DST → SHADER_READ, create view and sampler (linear, repeat). Bind at descriptor binding 1.</p>
+  </section>
+
+  <section>
+    <h2>8) HUD / FPS Overlay</h2>
+    <p>Shaders:</p>
+<pre><code class="language-glsl">// shaders/overlay.vert
+#version 450
+layout(location=0) in vec2 inPos;
+layout(location=1) in vec3 inColor;
+layout(location=0) out vec3 fragColor;
+void main() { fragColor = inColor; gl_Position = vec4(inPos, 0.0, 1.0); }</code></pre>
+<pre><code class="language-glsl">// shaders/overlay.frag
+#version 450
+layout(location=0) in vec3 fragColor;
+layout(location=0) out vec4 outColor;
+void main() { outColor = vec4(fragColor, 1.0); }</code></pre>
+    <p>Pipeline (in <code>vk_overlay.go</code>): vertex format = vec2 pos + vec3 color; culling off; depth off; opaque blend.</p>
+    <p>Data path:</p>
+    <ul class="steps">
+      <li>Bitmap font (runic patterns) → quads in pixel space → NDC conversion.</li>
+      <li>Write to host-visible overlay vertex buffer; issue a single <code>vkCmdDrawIndirect</code> using overlay indirect buffer.</li>
+      <li>FPS = frames / elapsed over a 1s window; updated each frame; drawn as “FPS: 60.0”.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>9) Render Loop & Resize</h2>
+    <ul class="steps">
+      <li>Acquire image → update UBO → update overlay → record command buffer → submit (semaphores+fence) → present.</li>
+      <li>Handle <code>OUT_OF_DATE</code>/<code>SUBOPTIMAL</code> or resize flag by recreating swapchain + depth + pipeline + descriptors + command buffers.</li>
+      <li>Clear color: vkcube-style green (or your preference); depth clear = 1.0.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>10) Input & Controls</h2>
+    <ul class="steps">
+      <li>ESC closes window.</li>
+      <li>SPACE toggles rotation pause (stops incrementing frame counter).</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Build & Run</h2>
+<pre><code>glslc shaders/cube.vert -o shaders/vert.spv
+glslc shaders/cube.frag -o shaders/frag.spv
+glslc shaders/overlay.vert -o shaders/overlay_vert.spv
+glslc shaders/overlay.frag -o shaders/overlay_frag.spv
+go run .</code></pre>
+    <p>You should see the classic vkcube texture on a rotating cube, green background, FPS text top-left, all faces visible, ESC to exit, SPACE to pause.</p>
+  </section>
+</main>
+</body>
+</html>
