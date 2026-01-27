@@ -24,6 +24,9 @@
       <li>Env: <code>VK_VALIDATION=0</code> to skip; default is to request validation if available.</li>
       <li>Log selected GPU, swapchain format/mode, validation on/off at startup.</li>
     </ul>
+<pre><code class="language-go">val := os.Getenv("VK_VALIDATION")
+enableValidation := (val == "" || val == "1")
+log.Printf("GPU: %s, swapchain: %v, validation: %v", gpuName, surfaceFormat.Format, enableValidation)</code></pre>
   </section>
   <div class="nav"><a href="index.html">← Back to Hub</a> <a href="step-007-texturing-parity.html">Next →</a></div>
 </main>

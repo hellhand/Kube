@@ -1,5 +1,5 @@
 <!doctype html>
-html lang="en">
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <title>Task 002.01 – Instance with Validation & Debug Messenger</title>
@@ -11,6 +11,21 @@ html lang="en">
     <h1>Task 002.01 – Instance with Validation & Debug Messenger</h1>
     <p class="lead">Create a Vulkan instance that requests validation (if available) and logs validation output.</p>
   </header>
+  <section>
+    <h2>0) Helper: C-string with pinned Go string</h2>
+<pre><code class="language-go">type cString struct {
+  str  string
+  cptr *C.char
+}
+func makeCString(s string) cString {
+  c := C.CString(s)
+  var goStr string
+  h := (*reflect.StringHeader)(unsafe.Pointer(&goStr))
+  h.Data = uintptr(unsafe.Pointer(c))
+  h.Len = len(s)
+  return cString{str: goStr, cptr: c}
+}</code></pre>
+  </section>
   <section>
     <div class="badge">Steps with code</div>
     <ol>

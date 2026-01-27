@@ -59,7 +59,19 @@ a.textureSampler = samp</code></pre>
   </section>
   <section>
     <h2>3) Vertex layout & UVs</h2>
-    <p>24 vertices (4 per face) with per-face UVs; 36 indices.</p>
+    <p>24 vertices (4 per face) with per-face UVs; 36 indices. Example back face:</p>
+<pre><code class="language-go">cubeVertices := []vertex{
+  // Back face (Z-)
+  {pos: mgl32.Vec3{-1, -1, -1}, color: mgl32.Vec3{1,0,0}, uv: mgl32.Vec2{0,0}},
+  {pos: mgl32.Vec3{ 1, -1, -1}, color: mgl32.Vec3{1,0,0}, uv: mgl32.Vec2{1,0}},
+  {pos: mgl32.Vec3{ 1,  1, -1}, color: mgl32.Vec3{1,0,0}, uv: mgl32.Vec2{1,1}},
+  {pos: mgl32.Vec3{-1,  1, -1}, color: mgl32.Vec3{1,0,0}, uv: mgl32.Vec2{0,1}},
+  // ... remaining faces
+}
+cubeIndices := []uint32{
+  0,1,2, 2,3,0, // back
+  // ... other faces
+}</code></pre>
   </section>
   <section>
     <h2>4) Pipeline considerations</h2>

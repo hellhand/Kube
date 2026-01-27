@@ -16,6 +16,16 @@
     <p>Have SPIR-V shaders, descriptor set layout, pipeline layout, and a graphics pipeline bound to the swapchain render pass.</p>
   </section>
   <section>
+    <h2>Code sketch</h2>
+<pre><code class="language-go">// descriptor set layout: binding0 UBO, binding1 sampler
+// load vert.spv / frag.spv -> shader modules
+// vertex input: pos/color/uv
+// raster: cull NONE, depth ON
+// pipeline layout referencing descriptor set layout
+// graphics pipeline using swapchain render pass, subpass 0
+</code></pre>
+  </section>
+  <section>
     <h2>Key steps</h2>
     <ul>
       <li>Write GLSL for vertex/fragment; compile with <code>glslc</code> to SPIR-V.</li>

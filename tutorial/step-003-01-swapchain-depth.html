@@ -73,6 +73,21 @@ img, mem, _ := a.createImage(extent.Width, extent.Height, depthFormat,
   vulkan.MemoryPropertyDeviceLocalBit)
 view, _ := a.createImageView(img, depthFormat, vulkan.ImageAspectFlags(vulkan.ImageAspectDepthBit))
 a.depthImage, a.depthImageMemory, a.depthImageView = img, mem, view</code></pre>
+    <p>Helper: find depth format:</p>
+<pre><code class="language-go">func pickDepthFormat() vulkan.Format {
+  candidates := []vulkan.Format{
+    vulkan.FormatD32Sfloat, vulkan.FormatD32SfloatS8Uint, vulkan.FormatD24UnormS8Uint,
+  }
+  for _, f := range candidates {
+    var props vulkan.FormatProperties
+    vulkan.GetPhysicalDeviceFormatProperties(a.physicalDevice, f, &props)
+    props.Deref()
+    if props.OptimalTilingFeatures &amp; vulkan.FormatFeatureFlags(vulkan.FormatFeatureDepthStencilAttachmentBit) != 0 {
+      return f
+    }
+  }
+  return vulkan.FormatD32Sfloat
+}</code></pre>
   </section>
   <div class="nav"><a href="index.html">← Back to Hub</a> <a href="step-003-02-renderpass-framebuffers.html">Next →</a></div>
 </main>

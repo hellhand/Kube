@@ -16,6 +16,28 @@
     <p>By the end, the app starts with a valid instance, debug messenger (if validation exists), a window surface, and a logical device with graphics + present queues.</p>
   </section>
   <section>
+    <h2>Code sketch</h2>
+<pre><code class="language-go">// instance + validation
+exts := glfw.GetRequiredInstanceExtensions()
+validationLayers := []string{"VK_LAYER_KHRONOS_validation"}
+// create instance with layers if available, then InitInstance
+// debug messenger install here (log severity/message)
+
+// surface
+glfw.CreateWindowSurface(a.instance, window, nil, &a.surface)
+
+// pick device
+// iterate physical devices, ensure graphics+present queues, swapchain support, VK_KHR_swapchain extension
+
+// create logical device
+extensions := []string{"VK_KHR_swapchain"}
+createInfo := vulkan.DeviceCreateInfo{ /* queue infos + extensions */ }
+vulkan.CreateDevice(phys, &createInfo, nil, &a.device)
+vulkan.GetDeviceQueue(a.device, graphicsIndex, 0, &a.graphicsQueue)
+vulkan.GetDeviceQueue(a.device, presentIndex, 0, &a.presentQueue)</code></pre>
+    <p>These pieces will be fleshed out in the next sub-steps.</p>
+  </section>
+  <section>
     <h2>1) Initialize Vulkan & validation</h2>
     <ul>
       <li>Call <code>vulkan.SetGetInstanceProcAddr(glfw.GetVulkanGetInstanceProcAddress())</code>, then <code>vulkan.Init()</code>.</li>

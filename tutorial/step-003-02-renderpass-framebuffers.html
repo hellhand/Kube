@@ -62,6 +62,21 @@ depthAttachment := vulkan.AttachmentDescription{
       <li>Create command pool (graphics queue family).</li>
       <li>Allocate primary command buffers = swapchain image count.</li>
     </ul>
+<pre><code class="language-go">poolInfo := vulkan.CommandPoolCreateInfo{
+  SType: vulkan.StructureTypeCommandPoolCreateInfo,
+  Flags: vulkan.CommandPoolCreateFlags(vulkan.CommandPoolCreateResetCommandBufferBit),
+  QueueFamilyIndex: a.queues.graphicsFamily,
+}
+vulkan.CreateCommandPool(a.device, &poolInfo, nil, &a.commandPool)
+
+allocInfo := vulkan.CommandBufferAllocateInfo{
+  SType: vulkan.StructureTypeCommandBufferAllocateInfo,
+  CommandPool: a.commandPool,
+  Level: vulkan.CommandBufferLevelPrimary,
+  CommandBufferCount: uint32(len(a.swapchainImages)),
+}
+a.commandBuffers = make([]vulkan.CommandBuffer, len(a.swapchainImages))
+vulkan.AllocateCommandBuffers(a.device, &allocInfo, a.commandBuffers)</code></pre>
   </section>
   <section>
     <h2>4) Sync objects</h2>

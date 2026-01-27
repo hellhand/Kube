@@ -71,6 +71,17 @@ draw := vulkan.DrawIndirectCommand{
 }
 // write draw into overlayIndirectMemory, then vkCmdDrawIndirect(cb, overlayIndirectBuffer, 0, 1, sizeof(draw))
 </code></pre>
+    <p>Converting pixel quad to NDC (inside <code>quadToVertices</code>):</p>
+<pre><code class="language-go">toNDC := func(px, py float32) mgl32.Vec2 {
+  nx := (px/float32(extent.Width))*2 - 1
+  ny := (py/float32(extent.Height))*2 - 1
+  return mgl32.Vec2{nx, ny}
+}
+p0 := toNDC(x, y); p1 := toNDC(x+w, y); p2 := toNDC(x+w, y+h); p3 := toNDC(x, y+h)
+return []overlayVertex{
+  {pos: p0, color: color}, {pos: p1, color: color}, {pos: p2, color: color},
+  {pos: p2, color: color}, {pos: p3, color: color}, {pos: p0, color: color},
+}</code></pre>
   </section>
   <section>
     <h2>FPS calculation</h2>

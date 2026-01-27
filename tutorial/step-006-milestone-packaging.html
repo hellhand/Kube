@@ -16,6 +16,17 @@
     <p>Have reproducible build/run instructions, shader compilation commands, and minimal validation/smoke coverage.</p>
   </section>
   <section>
+    <h2>Quick commands</h2>
+<pre><code>go build ./...
+glslc shaders/cube.vert -o shaders/vert.spv
+glslc shaders/cube.frag -o shaders/frag.spv
+glslc shaders/overlay.vert -o shaders/overlay_vert.spv
+glslc shaders/overlay.frag -o shaders/overlay_frag.spv
+VK_VALIDATION=0 go run .   # disable validation if needed
+</code></pre>
+    <p>Include these in docs or scripts/Make targets.</p>
+  </section>
+  <section>
     <h2>What to produce</h2>
     <ul>
       <li>README/docs with requirements, build/run steps, and env toggles.</li>

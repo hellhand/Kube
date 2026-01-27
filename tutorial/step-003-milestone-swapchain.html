@@ -16,6 +16,17 @@
     <p>Render a clear-color loop that acquires, draws, and presents without validation errors.</p>
   </section>
   <section>
+    <h2>Code sketch</h2>
+<pre><code class="language-go">// create swapchain (format, present mode, extent)
+// create swapchain image views
+// create depth image/view
+// create render pass (color+depth)
+// create framebuffers
+// create command pool + buffers
+// create per-frame semaphores/fences
+// draw loop: acquire -> record (clear) -> submit -> present</code></pre>
+  </section>
+  <section>
     <h2>Key steps</h2>
     <ul>
       <li>Swapchain creation (formats, present mode, extent) with graceful handling of zero extent.</li>

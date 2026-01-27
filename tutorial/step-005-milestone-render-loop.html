@@ -16,6 +16,20 @@ html lang="en">
     <p>Have a rotating cube that draws every frame and rebuilds swapchain/pipeline cleanly on resize.</p>
   </section>
   <section>
+    <h2>Draw loop sketch</h2>
+<pre><code class="language-go">for !window.ShouldClose() {
+  glfw.PollEvents()
+  vulkan.WaitForFences(device, 1, []vulkan.Fence{inFlightFences[frame]}, vulkan.True, vulkan.MaxUint64)
+  imageIndex := acquireImage()
+  updateUniformBuffer(imageIndex)
+  updateFPSOverlay()
+  vulkan.ResetCommandBuffer(commandBuffers[imageIndex], 0)
+  recordCommandBuffer(commandBuffers[imageIndex], int(imageIndex))
+  submitAndPresent(frame, imageIndex)
+  frame = (frame + 1) % maxFramesInFlight
+}</code></pre>
+  </section>
+  <section>
     <h2>Key steps</h2>
     <ul>
       <li>Record command buffers per swapchain image: bind pipeline, vertex/index buffers, descriptors; draw indexed cube.</li>
