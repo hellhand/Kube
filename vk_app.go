@@ -16,6 +16,7 @@ import (
 	"os"
 	"reflect"
 	"runtime"
+	"strconv"
 	"time"
 	"unsafe"
 
@@ -185,6 +186,9 @@ type VulkanApp struct {
 	debugFrames          int
 	framebufferResized   bool
 	startTime            time.Time
+	paused               bool
+	pausedAt             time.Time
+	pausedAccum          time.Duration
 }
 
 func newVulkanApp(window *glfw.Window) (*VulkanApp, error) {
@@ -214,6 +218,25 @@ func enableValidationLayers() bool {
 	default:
 		return true
 	}
+}
+
+func (a *VulkanApp) togglePause() {
+	if a.paused {
+		a.startTime = time.Now()
+		a.paused = false
+		return
+	}
+	a.pausedAccum += time.Since(a.startTime)
+	a.pausedAt = time.Now()
+	a.paused = true
+}
+
+func (a *VulkanApp) animationSeconds() float32 {
+	active := a.pausedAccum
+	if !a.paused {
+		active += time.Since(a.startTime)
+	}
+	return float32(active.Seconds())
 }
 
 func (a *VulkanApp) initVulkan() error {
@@ -836,11 +859,10 @@ func (a *VulkanApp) createDepthResources() error {
 }
 
 func (a *VulkanApp) createTextureImage() error {
-	// Simple 2x2 checker texture.
-	texWidth, texHeight := uint32(2), uint32(2)
-	pixels := []byte{
-		255, 255, 255, 255, 50, 50, 50, 255,
-		50, 50, 50, 255, 255, 255, 255, 255,
+	texWidth, texHeight, pixels, err := loadVkcubeTexture()
+	if err != nil {
+		log.Printf("load embedded vkcube texture failed, using fallback checker: %v", err)
+		texWidth, texHeight, pixels = fallbackCheckerTexture()
 	}
 
 	imageSize := vulkan.DeviceSize(len(pixels))
@@ -883,6 +905,86 @@ func (a *VulkanApp) createTextureImage() error {
 	a.textureImage = image
 	a.textureImageMemory = memory
 	return nil
+}
+
+func loadVkcubeTexture() (uint32, uint32, []byte, error) {
+	if len(lunargPPM) == 0 {
+		return 0, 0, nil, fmt.Errorf("embedded texture payload missing")
+	}
+	w, h, rgb, err := parsePPM(lunargPPM)
+	if err != nil {
+		return 0, 0, nil, err
+	}
+	pixelCount := int(w * h)
+	if len(rgb) != pixelCount*3 {
+		return 0, 0, nil, fmt.Errorf("unexpected ppm pixel length: got %d want %d", len(rgb), pixelCount*3)
+	}
+	rgba := make([]byte, pixelCount*4)
+	for i := 0; i < pixelCount; i++ {
+		copy(rgba[i*4:], rgb[i*3:i*3+3])
+		rgba[i*4+3] = 255
+	}
+	return w, h, rgba, nil
+}
+
+func parsePPM(data []byte) (uint32, uint32, []byte, error) {
+	if len(data) < 3 || data[0] != 'P' || data[1] != '6' {
+		return 0, 0, nil, fmt.Errorf("not a P6 ppm")
+	}
+	idx := 2
+	var tokens []string
+	for len(tokens) < 3 && idx < len(data) {
+		for idx < len(data) && isSpace(data[idx]) {
+			idx++
+		}
+		start := idx
+		for idx < len(data) && !isSpace(data[idx]) {
+			idx++
+		}
+		if start < idx {
+			tokens = append(tokens, string(data[start:idx]))
+		}
+	}
+	if len(tokens) < 3 {
+		return 0, 0, nil, fmt.Errorf("ppm header incomplete")
+	}
+	width, err := strconv.Atoi(tokens[0])
+	if err != nil {
+		return 0, 0, nil, fmt.Errorf("ppm width: %w", err)
+	}
+	height, err := strconv.Atoi(tokens[1])
+	if err != nil {
+		return 0, 0, nil, fmt.Errorf("ppm height: %w", err)
+	}
+	maxVal, err := strconv.Atoi(tokens[2])
+	if err != nil {
+		return 0, 0, nil, fmt.Errorf("ppm max value: %w", err)
+	}
+	if maxVal != 255 {
+		return 0, 0, nil, fmt.Errorf("unsupported max value %d", maxVal)
+	}
+	for idx < len(data) && isSpace(data[idx]) {
+		idx++
+	}
+	pixels := data[idx:]
+	expected := width * height * 3
+	if len(pixels) < expected {
+		return 0, 0, nil, fmt.Errorf("ppm data truncated: got %d expected %d", len(pixels), expected)
+	}
+	return uint32(width), uint32(height), pixels[:expected], nil
+}
+
+func fallbackCheckerTexture() (uint32, uint32, []byte) {
+	texWidth, texHeight := uint32(2), uint32(2)
+	pixels := []byte{
+		255, 255, 255, 255, 50, 50, 50, 255,
+		50, 50, 50, 255, 255, 255, 255, 255,
+	}
+	return texWidth, texHeight, pixels
+}
+
+func isSpace(b byte) bool {
+	return b == ' ' || b == '\n' || b == '\r' || b == '\t'
 }
 
 func (a *VulkanApp) createTextureImageView() error {
@@ -1323,9 +1425,11 @@ func (a *VulkanApp) createDescriptorSets() error {
 }
 
 func (a *VulkanApp) updateUniformBuffer(imageIndex uint32) error {
-	elapsed := float32(time.Since(a.startTime).Seconds())
-	angle := elapsed * mgl32.DegToRad(45)
-	model := mgl32.HomogRotate3D(angle, mgl32.Vec3{0, 0, 1})
+	elapsed := a.animationSeconds()
+	spinZ := elapsed * mgl32.DegToRad(45)
+	spinY := elapsed * mgl32.DegToRad(30)
+	model := mgl32.HomogRotate3D(spinZ, mgl32.Vec3{0, 0, 1})
+	model = mgl32.HomogRotate3D(spinY, mgl32.Vec3{0, 1, 0}).Mul4(model)
 	view := mgl32.LookAtV(
 		mgl32.Vec3{3, 3, 3},
 		mgl32.Vec3{0, 0, 0},
@@ -1525,9 +1629,10 @@ func (a *VulkanApp) createGraphicsPipeline() error {
 		RasterizerDiscardEnable: vulkan.False,
 		PolygonMode:             vulkan.PolygonModeFill,
 		LineWidth:               1.0,
-		CullMode:                vulkan.CullModeFlags(vulkan.CullModeBackBit),
-		FrontFace:               vulkan.FrontFaceCounterClockwise,
-		DepthBiasEnable:         vulkan.False,
+		// Keep faces visible regardless of winding to avoid disappearing faces during animation.
+		CullMode:        vulkan.CullModeFlags(vulkan.CullModeNone),
+		FrontFace:       vulkan.FrontFaceCounterClockwise,
+		DepthBiasEnable: vulkan.False,
 	}
 
 	multisampling := vulkan.PipelineMultisampleStateCreateInfo{
@@ -2030,7 +2135,8 @@ func (a *VulkanApp) recordCommandBuffer(cb vulkan.CommandBuffer, imageIndex int)
 		return fmt.Errorf("begin command buffer: %w", vulkan.Error(res))
 	}
 
-	clearColor := vulkan.NewClearValue([]float32{0.05, 0.05, 0.1, 1.0})
+	// vkcube-style green backdrop to highlight the rotating cube.
+	clearColor := vulkan.NewClearValue([]float32{0.15, 0.35, 0.15, 1.0})
 	clearDepth := vulkan.NewClearDepthStencil(1.0, 0)
 	clearValues := []vulkan.ClearValue{clearColor, clearDepth}
 

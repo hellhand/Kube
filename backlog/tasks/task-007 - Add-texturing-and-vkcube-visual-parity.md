@@ -20,4 +20,6 @@ Add a textured cube and adjust the background/visuals to mirror the classic `vkc
 - [ ] #2 Background clear color matches the intended vkcube dark backdrop.
 - [ ] #3 Depth testing is enabled and faces do not disappear during rotation.
 - [ ] #4 Shaders and SPIR-V are updated to consume position, color, and UV inputs.
+- [ ] #5 Cube uses the classic vkcube `lunarg.ppm` texture with correct UV mapping per face.
+- [ ] #6 Runtime controls: ESC closes the window; SPACE toggles cube rotation without hitching.
 <!-- AC:END -->

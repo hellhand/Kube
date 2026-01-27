@@ -26,6 +26,7 @@ func main() {
 	}
 	defer window.Destroy()
 
+	var app *VulkanApp
 	// Ensure the framebuffer has a non-zero size before initializing Vulkan.
 	for {
 		w, h := window.GetFramebufferSize()
@@ -39,9 +40,12 @@ func main() {
 		if key == glfw.KeyEscape && action == glfw.Press {
 			w.SetShouldClose(true)
 		}
+		if key == glfw.KeySpace && action == glfw.Press && app != nil {
+			app.togglePause()
+		}
 	})
 
-	app, err := newVulkanApp(window)
+	app, err = newVulkanApp(window)
 	if err != nil {
 		log.Fatalf("init vulkan: %v", err)
 	}
