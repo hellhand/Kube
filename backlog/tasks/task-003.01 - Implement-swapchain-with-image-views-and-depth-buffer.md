@@ -1,7 +1,7 @@
 ---
 id: TASK-003.01
 title: Implement swapchain with image views and depth buffer
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-01-27 16:40'
 labels: []
@@ -18,7 +18,7 @@ Create the swapchain, color image views, and a depth buffer suitable for a 3D cu
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Swapchain chooses format/present mode, image count, and extent from surface capabilities.
-- [ ] #2 Color image views and a depth image with view allocated/cleaned alongside the swapchain.
-- [ ] #3 Resize/surface-loss triggers safe swapchain (and depth) recreation without leaks.
+- [x] #1 Swapchain chooses format/present mode, image count, and extent from surface capabilities.
+- [x] #2 Color image views and a depth image with view allocated/cleaned alongside the swapchain.
+- [x] #3 Resize/surface-loss triggers safe swapchain (and depth) recreation without leaks.
 <!-- AC:END -->

@@ -5,13 +5,11 @@ import (
 	"runtime"
 	"time"
 
-	mgl32 "github.com/go-gl/mathgl/mgl32"
 	"github.com/vulkan-go/glfw/v3.3/glfw"
-	_ "github.com/vulkan-go/vulkan"
 )
 
 func init() {
-	// GLFW (and Vulkan later) expect to run on the main OS thread.
+	// GLFW/Vulkan require the main thread.
 	runtime.LockOSThread()
 }
 
@@ -21,7 +19,7 @@ func main() {
 	}
 	defer glfw.Terminate()
 
-	glfw.WindowHint(glfw.ClientAPI, glfw.NoAPI) // no OpenGL context; Vulkan will be used later
+	glfw.WindowHint(glfw.ClientAPI, glfw.NoAPI)
 	window, err := glfw.CreateWindow(800, 600, "Kube Vulkan (baseline window)", nil, nil)
 	if err != nil {
 		log.Fatalf("create window: %v", err)
@@ -34,11 +32,21 @@ func main() {
 		}
 	})
 
-	// Placeholder math usage; keeps math library available for upcoming transforms.
-	_ = mgl32.Ident4()
+	app, err := newVulkanApp(window)
+	if err != nil {
+		log.Fatalf("init vulkan: %v", err)
+	}
+	defer app.Cleanup()
+
+	window.SetFramebufferSizeCallback(func(w *glfw.Window, width int, height int) {
+		app.requestSwapchainRecreate()
+	})
 
 	for !window.ShouldClose() {
 		glfw.PollEvents()
-		time.Sleep(16 * time.Millisecond) // simple throttling to avoid pegging the CPU
+		if err := app.DrawFrame(); err != nil {
+			log.Fatalf("draw frame: %v", err)
+		}
+		time.Sleep(1 * time.Millisecond) // small throttle to avoid busy loop
 	}
 }

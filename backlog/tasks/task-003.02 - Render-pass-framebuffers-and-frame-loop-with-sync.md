@@ -1,7 +1,7 @@
 ---
 id: TASK-003.02
 title: 'Render pass, framebuffers, and frame loop with sync'
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-01-27 16:40'
 labels: []
@@ -18,7 +18,7 @@ Build the render pass (color+depth), framebuffers, command pool/buffers, and per
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Render pass defines color+depth attachments compatible with the swapchain.
-- [ ] #2 Framebuffers, command pool, and command buffers allocated per swapchain image.
-- [ ] #3 Per-frame semaphores/fences support at least double buffering and the clear-color loop presents without stalling.
+- [x] #1 Render pass defines color+depth attachments compatible with the swapchain.
+- [x] #2 Framebuffers, command pool, and command buffers allocated per swapchain image.
+- [x] #3 Per-frame semaphores/fences support at least double buffering and the clear-color loop presents without stalling.
 <!-- AC:END -->

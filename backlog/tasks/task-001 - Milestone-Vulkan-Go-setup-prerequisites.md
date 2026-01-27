@@ -1,7 +1,7 @@
 ---
 id: TASK-001
 title: 'Milestone: Vulkan Go setup & prerequisites'
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-01-27 16:39'
 labels: []
@@ -16,5 +16,5 @@ Parent milestone for environment prep, Go module setup, and a minimal runnable w
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 All child tasks for this milestone are completed and project builds/runs the baseline window.
+- [x] #1 All child tasks for this milestone are completed and project builds/runs the baseline window.
 <!-- AC:END -->
