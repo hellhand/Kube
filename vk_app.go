@@ -16,7 +16,6 @@ import (
 	"os"
 	"reflect"
 	"runtime"
-	"strconv"
 	"strings"
 	"time"
 	"unsafe"
@@ -237,50 +236,6 @@ func newVulkanApp(window *glfw.Window) (*VulkanApp, error) {
 	return app, nil
 }
 
-// enableValidationLayers inspects VK_VALIDATION to decide whether to request validation.
-func enableValidationLayers() bool {
-	val := os.Getenv("VK_VALIDATION")
-	if val == "" {
-		return true
-	}
-	switch val {
-	case "0", "false", "False", "FALSE":
-		return false
-	default:
-		return true
-	}
-}
-
-// envVsync reads VK_VSYNC; default is false to preserve mailbox behavior unless explicitly requested.
-func envVsync(defaultVal bool) bool {
-	val := strings.TrimSpace(os.Getenv("VK_VSYNC"))
-	if val == "" {
-		return defaultVal
-	}
-	switch strings.ToLower(val) {
-	case "1", "true", "on", "yes":
-		return true
-	case "0", "false", "off", "no":
-		return false
-	default:
-		return defaultVal
-	}
-}
-
-// envMaxFPS reads VK_MAX_FPS and returns a positive integer, or the provided default when unset/invalid.
-func envMaxFPS(defaultVal int) int {
-	val := strings.TrimSpace(os.Getenv("VK_MAX_FPS"))
-	if val == "" {
-		return defaultVal
-	}
-	fps, err := strconv.Atoi(val)
-	if err != nil || fps < 0 {
-		log.Printf("VK_MAX_FPS invalid (%q); keeping default %d", val, defaultVal)
-		return defaultVal
-	}
-	return fps
-}
-
 func configPath() string {
 	if p := strings.TrimSpace(os.Getenv("KUBE_CONFIG")); p != "" {
 		return p
@@ -288,27 +243,27 @@ func configPath() string {
 	return "config.yaml"
 }
 
-// loadAppConfig merges defaults, env overrides, and an optional YAML config file.
-// The config file path defaults to ./config.yaml or KUBE_CONFIG if set.
+// loadAppConfig merges defaults with an optional YAML config file.
+// The config file path defaults to ./config/config.yaml or KUBE_CONFIG if set.
 func loadAppConfig() appConfig {
 	cfg := appConfig{
-		enableValidation: enableValidationLayers(),
-		vsyncEnabled:     envVsync(false),
-		maxFPS:           envMaxFPS(0),
+		enableValidation: true,
+		vsyncEnabled:     false,
+		maxFPS:           0,
 	}
 
 	path := configPath()
 	data, err := os.ReadFile(path)
 	if err != nil {
 		if !errors.Is(err, os.ErrNotExist) {
-			log.Printf("config: failed reading %s: %v (using env/defaults)", path, err)
+			log.Printf("config: failed reading %s: %v (using defaults)", path, err)
 		}
 		return cfg
 	}
 
 	var fc fileConfig
 	if err := yaml.Unmarshal(data, &fc); err != nil {
-		log.Printf("config: failed parsing %s: %v (using env/defaults)", path, err)
+		log.Printf("config: failed parsing %s: %v (using defaults)", path, err)
 		return cfg
 	}
 
