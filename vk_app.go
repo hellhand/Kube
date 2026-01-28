@@ -240,7 +240,7 @@ func configPath() string {
 	if p := strings.TrimSpace(os.Getenv("KUBE_CONFIG")); p != "" {
 		return p
 	}
-	return "config.yaml"
+	return "config/config.yaml"
 }
 
 // loadAppConfig merges defaults with an optional YAML config file.
