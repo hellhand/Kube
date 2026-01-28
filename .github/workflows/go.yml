@@ -23,7 +23,9 @@ jobs:
           libvulkan-dev \
           libglfw3-dev \
           libxcursor-dev \
-          libxinerama-dev
+          libxinerama-dev \
+          libxxf86vm-dev \
+          libxi-dev
 
     - name: Set up Go
       uses: actions/setup-go@v4
