@@ -16,10 +16,15 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
+    - name: Install Vulkan and GLFW dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libvulkan-dev libglfw3-dev
+
     - name: Set up Go
       uses: actions/setup-go@v4
       with:
-        go-version: '1.25'
+        go-version: '1.24.4'
 
     - name: Build
       run: go build -v ./...
