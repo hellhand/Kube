@@ -19,7 +19,7 @@ jobs:
     - name: Install Vulkan and GLFW dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y libvulkan-dev libglfw3-dev
+        sudo apt-get install -y libvulkan-dev libglfw3-dev libxcursor-dev
 
     - name: Set up Go
       uses: actions/setup-go@v4
