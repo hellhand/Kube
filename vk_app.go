@@ -16,12 +16,15 @@ import (
 	"os"
 	"reflect"
 	"runtime"
+	"strconv"
+	"strings"
 	"time"
 	"unsafe"
 
 	mgl32 "github.com/go-gl/mathgl/mgl32"
 	"github.com/vulkan-go/glfw/v3.3/glfw"
 	"github.com/vulkan-go/vulkan"
+	"gopkg.in/yaml.v3"
 )
 
 const (
@@ -132,6 +135,14 @@ type uniformBufferObject struct {
 
 type appConfig struct {
 	enableValidation bool
+	vsyncEnabled     bool
+	maxFPS           int
+}
+
+type fileConfig struct {
+	Validation *bool `yaml:"validation"`
+	Vsync      *bool `yaml:"vsync"`
+	MaxFPS     *int  `yaml:"max_fps"`
 }
 
 type queueFamilyIndices struct {
@@ -211,14 +222,14 @@ type VulkanApp struct {
 
 // newVulkanApp wires configuration, creates the Vulkan app, and performs all initialization.
 func newVulkanApp(window *glfw.Window) (*VulkanApp, error) {
-	cfg := appConfig{
-		enableValidation: enableValidationLayers(),
-	}
+	cfg := loadAppConfig()
 
 	app := &VulkanApp{
 		cfg:    cfg,
 		window: window,
 	}
+
+	log.Printf("config: validation=%v vsync=%v maxFPS=%d", cfg.enableValidation, cfg.vsyncEnabled, cfg.maxFPS)
 
 	if err := app.initVulkan(); err != nil {
 		return nil, err
@@ -238,6 +249,85 @@ func enableValidationLayers() bool {
 	default:
 		return true
 	}
+}
+
+// envVsync reads VK_VSYNC; default is false to preserve mailbox behavior unless explicitly requested.
+func envVsync(defaultVal bool) bool {
+	val := strings.TrimSpace(os.Getenv("VK_VSYNC"))
+	if val == "" {
+		return defaultVal
+	}
+	switch strings.ToLower(val) {
+	case "1", "true", "on", "yes":
+		return true
+	case "0", "false", "off", "no":
+		return false
+	default:
+		return defaultVal
+	}
+}
+
+// envMaxFPS reads VK_MAX_FPS and returns a positive integer, or the provided default when unset/invalid.
+func envMaxFPS(defaultVal int) int {
+	val := strings.TrimSpace(os.Getenv("VK_MAX_FPS"))
+	if val == "" {
+		return defaultVal
+	}
+	fps, err := strconv.Atoi(val)
+	if err != nil || fps < 0 {
+		log.Printf("VK_MAX_FPS invalid (%q); keeping default %d", val, defaultVal)
+		return defaultVal
+	}
+	return fps
+}
+
+func configPath() string {
+	if p := strings.TrimSpace(os.Getenv("KUBE_CONFIG")); p != "" {
+		return p
+	}
+	return "config.yaml"
+}
+
+// loadAppConfig merges defaults, env overrides, and an optional YAML config file.
+// The config file path defaults to ./config.yaml or KUBE_CONFIG if set.
+func loadAppConfig() appConfig {
+	cfg := appConfig{
+		enableValidation: enableValidationLayers(),
+		vsyncEnabled:     envVsync(false),
+		maxFPS:           envMaxFPS(0),
+	}
+
+	path := configPath()
+	data, err := os.ReadFile(path)
+	if err != nil {
+		if !errors.Is(err, os.ErrNotExist) {
+			log.Printf("config: failed reading %s: %v (using env/defaults)", path, err)
+		}
+		return cfg
+	}
+
+	var fc fileConfig
+	if err := yaml.Unmarshal(data, &fc); err != nil {
+		log.Printf("config: failed parsing %s: %v (using env/defaults)", path, err)
+		return cfg
+	}
+
+	if fc.Validation != nil {
+		cfg.enableValidation = *fc.Validation
+	}
+	if fc.Vsync != nil {
+		cfg.vsyncEnabled = *fc.Vsync
+	}
+	if fc.MaxFPS != nil {
+		if *fc.MaxFPS < 0 {
+			log.Printf("config: max_fps must be >= 0 (got %d); keeping %d", *fc.MaxFPS, cfg.maxFPS)
+		} else {
+			cfg.maxFPS = *fc.MaxFPS
+		}
+	}
+
+	log.Printf("config: loaded %s (validation=%v vsync=%v maxFPS=%d)", path, cfg.enableValidation, cfg.vsyncEnabled, cfg.maxFPS)
+	return cfg
 }
 
 // togglePause switches rotation on/off and tracks timing to keep animation consistent.
@@ -751,8 +841,11 @@ func chooseSwapSurfaceFormat(available []vulkan.SurfaceFormat) vulkan.SurfaceFor
 	return available[0]
 }
 
-// chooseSwapPresentMode picks MAILBOX when present, otherwise FIFO.
-func chooseSwapPresentMode(available []vulkan.PresentMode) vulkan.PresentMode {
+// chooseSwapPresentMode picks FIFO when vsync is requested; otherwise MAILBOX if available, else FIFO.
+func chooseSwapPresentMode(available []vulkan.PresentMode, vsync bool) vulkan.PresentMode {
+	if vsync {
+		return vulkan.PresentModeFifo
+	}
 	for _, m := range available {
 		if m == vulkan.PresentModeMailbox {
 			return m
@@ -811,7 +904,7 @@ func (a *VulkanApp) createSwapchain() error {
 	support := a.querySwapchainSupport(a.physicalDevice)
 
 	surfaceFormat := chooseSwapSurfaceFormat(support.formats)
-	presentMode := chooseSwapPresentMode(support.presentModes)
+	presentMode := chooseSwapPresentMode(support.presentModes, a.cfg.vsyncEnabled)
 	extent := chooseSwapExtent(support.capabilities, a.window)
 
 	imageCount := support.capabilities.MinImageCount + 1

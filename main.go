@@ -21,6 +21,7 @@ func main() {
 	defer glfw.Terminate()
 
 	glfw.WindowHint(glfw.ClientAPI, glfw.NoAPI)
+	glfw.WindowHint(glfw.Resizable, glfw.True)
 	window, err := glfw.CreateWindow(800, 600, "Kube Vulkan (baseline window)", nil, nil)
 	if err != nil {
 		log.Fatalf("create window: %v", err)
@@ -59,10 +60,18 @@ func main() {
 	log.Printf("Entering main loop")
 
 	for !window.ShouldClose() {
+		frameStart := time.Now()
 		glfw.PollEvents()
 		if err := app.DrawFrame(); err != nil {
 			log.Fatalf("draw frame: %v", err)
 		}
-		time.Sleep(1 * time.Millisecond) // small throttle to avoid busy loop
+		if app.cfg.maxFPS > 0 {
+			target := time.Second / time.Duration(app.cfg.maxFPS)
+			if sleep := target - time.Since(frameStart); sleep > 0 {
+				time.Sleep(sleep)
+			}
+		} else {
+			time.Sleep(1 * time.Millisecond) // small throttle to avoid busy loop
+		}
 	}
 }
