@@ -8,4 +8,4 @@ require (
 	github.com/vulkan-go/vulkan v0.0.0-20221209234627-c0a353ae26c8
 )
 
-replace github.com/vulkan-go/vulkan => ./third_party/vulkan
+//replace github.com/vulkan-go/vulkan => ./third_party/vulkan
